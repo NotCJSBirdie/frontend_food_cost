@@ -131,27 +131,63 @@ const RECORD_SALE = gql`
 `;
 
 function App() {
-  const { loading, error, data, refetch } = useQuery(GET_DATA);
+  console.log("Rendering App component...");
+  const { loading, error, data, refetch } = useQuery(GET_DATA, {
+    onCompleted: (data) => {
+      console.log("GET_DATA query completed:", data);
+    },
+    onError: (err) => {
+      console.error("GET_DATA query error:", {
+        message: err.message,
+        graphQLErrors: err.graphQLErrors,
+        networkError: err.networkError,
+      });
+    },
+  });
   const [addIngredient, { error: addIngredientError }] = useMutation(
     ADD_INGREDIENT,
     {
-      onCompleted: () => refetch(),
-      onError: (err) => console.error("AddIngredient error:", err.message),
+      onCompleted: (data) => {
+        console.log("ADD_INGREDIENT mutation completed:", data);
+        refetch();
+      },
+      onError: (err) => {
+        console.error("ADD_INGREDIENT mutation error:", {
+          message: err.message,
+          graphQLErrors: err.graphQLErrors,
+          networkError: err.networkError,
+        });
+      },
     }
   );
   const [createRecipe, { error: createRecipeError }] = useMutation(
     CREATE_RECIPE,
     {
-      onCompleted: () => refetch(),
-      onError: (err) => console.error("CreateRecipe error:", err.message),
+      onCompleted: (data) => {
+        console.log("CREATE_RECIPE mutation completed:", data);
+        refetch();
+      },
+      onError: (err) => {
+        console.error("CREATE_RECIPE mutation error:", {
+          message: err.message,
+          graphQLErrors: err.graphQLErrors,
+          networkError: err.networkError,
+        });
+      },
     }
   );
   const [recordSale, { error: recordSaleError }] = useMutation(RECORD_SALE, {
     onCompleted: (data) => {
-      console.log("RecordSale completed:", data);
+      console.log("RECORD_SALE mutation completed:", data);
       refetch();
     },
-    onError: (err) => console.error("RecordSale error:", err.message),
+    onError: (err) => {
+      console.error("RECORD_SALE mutation error:", {
+        message: err.message,
+        graphQLErrors: err.graphQLErrors,
+        networkError: err.networkError,
+      });
+    },
   });
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isSubmitting, setIsSubmitting] = useState({
@@ -178,11 +214,29 @@ function App() {
   });
   const [saleFormError, setSaleFormError] = useState("");
 
-  if (loading) return <p className="loading">Loading...</p>;
-  if (error) return <p className="error">Error: {error.message}</p>;
+  console.log("App state:", {
+    loading,
+    error: error ? error.message : null,
+    activeTab,
+    isSubmitting,
+  });
+
+  if (loading) {
+    console.log("App is in loading state");
+    return <p className="loading">Loading...</p>;
+  }
+  if (error) {
+    console.error("App error state:", {
+      message: error.message,
+      graphQLErrors: error.graphQLErrors,
+      networkError: error.networkError,
+    });
+    return <p className="error">Error: {error.message}</p>;
+  }
 
   const handleAddIngredient = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Submitting addIngredient:", ingredientForm);
     setIsSubmitting({ ...isSubmitting, ingredient: true });
     try {
       await addIngredient({
@@ -194,6 +248,7 @@ function App() {
           restockThreshold: parseFloat(ingredientForm.restockThreshold),
         },
       });
+      console.log("addIngredient succeeded");
       setIngredientForm({
         name: "",
         unitPrice: "",
@@ -202,7 +257,7 @@ function App() {
         restockThreshold: "",
       });
     } catch (err) {
-      console.error("AddIngredient failed:", err);
+      console.error("addIngredient failed:", err);
     } finally {
       setIsSubmitting({ ...isSubmitting, ingredient: false });
     }
@@ -210,6 +265,7 @@ function App() {
 
   const handleCreateRecipe = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Submitting createRecipe:", recipeForm);
     if (
       recipeForm.name &&
       recipeForm.ingredients.every((ing) => ing.id && ing.quantity)
@@ -226,35 +282,42 @@ function App() {
             targetMargin: parseFloat(recipeForm.targetMargin) / 100,
           },
         });
+        console.log("createRecipe succeeded");
         setRecipeForm({
           name: "",
           targetMargin: "30",
           ingredients: [{ id: "", quantity: "" }],
         });
       } catch (err) {
-        console.error("CreateRecipe failed:", err);
+        console.error("createRecipe failed:", err);
       } finally {
         setIsSubmitting({ ...isSubmitting, recipe: false });
       }
+    } else {
+      console.warn("createRecipe form invalid:", recipeForm);
     }
   };
 
   const handleRecordSale = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Submitting recordSale:", saleForm);
     setSaleFormError("");
 
     const saleAmount = parseFloat(saleForm.saleAmount);
     const quantitySold = parseInt(saleForm.quantitySold);
 
     if (!saleForm.recipeId) {
+      console.warn("recordSale validation failed: Missing recipeId");
       setSaleFormError("Please select a recipe");
       return;
     }
     if (isNaN(saleAmount) || saleAmount <= 0) {
+      console.warn("recordSale validation failed: Invalid saleAmount");
       setSaleFormError("Please enter a valid sale amount greater than 0");
       return;
     }
     if (isNaN(quantitySold) || quantitySold <= 0) {
+      console.warn("recordSale validation failed: Invalid quantitySold");
       setSaleFormError("Please enter a valid quantity greater than 0");
       return;
     }
@@ -268,9 +331,10 @@ function App() {
           quantitySold,
         },
       });
+      console.log("recordSale succeeded");
       setSaleForm({ recipeId: "", saleAmount: "", quantitySold: "1" });
     } catch (err) {
-      console.error("RecordSale failed:", err);
+      console.error("recordSale failed:", err);
       setSaleFormError("Failed to record sale. Please try again.");
     } finally {
       setIsSubmitting({ ...isSubmitting, sale: false });
@@ -278,6 +342,7 @@ function App() {
   };
 
   const addIngredientToRecipe = () => {
+    console.log("Adding ingredient to recipe form");
     setRecipeForm({
       ...recipeForm,
       ingredients: [...recipeForm.ingredients, { id: "", quantity: "" }],
@@ -289,14 +354,17 @@ function App() {
     field: "id" | "quantity",
     value: string
   ) => {
+    console.log("Updating recipe ingredient:", { index, field, value });
     const newIngredients = [...recipeForm.ingredients];
     newIngredients[index] = { ...newIngredients[index], [field]: value };
     setRecipeForm({ ...recipeForm, ingredients: newIngredients });
   };
 
+  console.log("Rendering tab content for:", activeTab);
   const renderTabContent = () => {
     switch (activeTab) {
       case "dashboard":
+        console.log("Rendering dashboard tab");
         return (
           <div className="card">
             <h2 className="card-title">Dashboard</h2>
@@ -340,6 +408,7 @@ function App() {
           </div>
         );
       case "ingredients":
+        console.log("Rendering ingredients tab");
         return (
           <div className="card">
             <h2 className="card-title">Ingredients</h2>
@@ -465,6 +534,7 @@ function App() {
           </div>
         );
       case "recipes":
+        console.log("Rendering recipes tab");
         return (
           <div className="card">
             <h2 className="card-title">Create Recipe</h2>
@@ -594,6 +664,7 @@ function App() {
           </div>
         );
       case "sales":
+        console.log("Rendering sales tab");
         return (
           <div className="card">
             <h2 className="card-title">Record Sale</h2>
@@ -679,6 +750,7 @@ function App() {
           </div>
         );
       default:
+        console.warn("Unknown tab:", activeTab);
         return null;
     }
   };
