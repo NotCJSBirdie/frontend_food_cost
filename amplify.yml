@@ -6,10 +6,10 @@ frontend:
         - npm ci
     build:
       commands:
-        - echo "VITE_ENV=production" >> .env
-        - echo "VITE_APPSYNC_URL=https://kh73anwd2vemfn7cyyqwpfa24a.appsync-api.ap-southeast-2.amazonaws.com/graphql" >> .env
-        - echo "VITE_APPSYNC_API_KEY=da2-zj2umpuqb5enbkyrnndgizu65a" >> .env
-        - echo "VITE_APPSYNC_REGION=ap-southeast-2" >> .env
+        - echo "VITE_ENV=$VITE_ENV" >> .env
+        - echo "VITE_APPSYNC_URL=$VITE_APPSYNC_URL" >> .env
+        - echo "VITE_APPSYNC_API_KEY=$VITE_APPSYNC_API_KEY" >> .env
+        - echo "VITE_APPSYNC_REGION=$VITE_APPSYNC_REGION" >> .env
         - npm run build
   artifacts:
     baseDirectory: dist
