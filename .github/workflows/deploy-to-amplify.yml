@@ -62,6 +62,8 @@ jobs:
           ls -la
           ls -la dist/
           aws sts get-caller-identity
+          aws amplify list-apps --query "apps[?appId=='${{ secrets.AMPLIFY_APP_ID }}']"
+          aws amplify list-branches --app-id ${{ secrets.AMPLIFY_APP_ID }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -78,7 +80,11 @@ jobs:
       # Invalidate CloudFront distribution
       - name: Invalidate CloudFront
         run: |
-          DISTRIBUTION_ID=$(aws amplify list-apps --query "apps[?appId=='${{ secrets.AMPLIFY_APP_ID }}'].productionBranch.distributionId" --output text)
+          DISTRIBUTION_ID=$(aws amplify list-branches --app-id ${{ secrets.AMPLIFY_APP_ID }} --query "branches[?branchName=='dev'].distributionId" --output text)
+          if [ -z "$DISTRIBUTION_ID" ]; then
+            echo "Error: Could not retrieve distribution ID. Please set DISTRIBUTION_ID secret."
+            exit 1
+          fi
           aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
