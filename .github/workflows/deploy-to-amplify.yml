@@ -8,6 +8,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ # Ensure all commands run in the repository root
 
     steps:
       # Checkout the repository
@@ -44,7 +47,20 @@ jobs:
 
       # Install AWS Amplify CLI
       - name: Install Amplify CLI
-        run: npm install -g @aws-amplify/cli
+        run: npm install -g @aws-amplify/cli@12.10.1
+
+      # Configure Amplify CLI
+      - name: Configure Amplify
+        run: |
+          amplify configure project --app-id ${{ secrets.AMPLIFY_APP_ID }} --env-name dev --yes
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ap-southeast-2
+
+      # Debug Amplify status
+      - name: Debug Amplify status
+        run: amplify status
 
       # Deploy to AWS Amplify
       - name: Deploy to Amplify
