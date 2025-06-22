@@ -6,13 +6,11 @@
   "javascript": {
     "framework": "react",
     "config": {
-      "SourceDir": "dist",
-      "DistributionDir": "build",
+      "SourceDir": "src",
+      "DistributionDir": "dist",
       "BuildCommand": "npm run-script build",
       "StartCommand": "npm run dev"
     }
   },
-  "providers": [
-    "awscloudformation"
-  ]
+  "providers": ["awscloudformation"]
 }
