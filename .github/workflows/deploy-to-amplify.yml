@@ -64,6 +64,7 @@ jobs:
         run: |
           pwd
           ls -la
+          ls -la dist/
           amplify env list
           amplify status
         env:
@@ -71,17 +72,19 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ap-southeast-2
 
-      # Create temporary directory for Amplify
-      - name: Create temporary Amplify directory
-        run: |
-          mkdir -p /tmp/amplify
-          echo "AMPLIFY_DIR=/tmp/amplify" >> $GITHUB_ENV
-
-      # Deploy to AWS Amplify
-      - name: Deploy to Amplify
-        run: amplify publish --yes
+      # Upload files to S3 deployment bucket
+      - name: Upload to S3
+        run: aws s3 cp dist/ s3://amplify-frontend-dev-505cc-deployment/ --recursive
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ap-southeast-2
-          AMPLIFY_DIR: /tmp/amplify # Override Amplify CLI directory
+
+      # Deploy to AWS Amplify (trigger CloudFormation update)
+      - name: Deploy to Amplify
+        run: amplify publish --yes --skip-upload
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ap-southeast-2
+          AMPLIFY_DIR: /tmp/amplify
