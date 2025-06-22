@@ -3,12 +3,18 @@
   "framework": "vite",
   "builds": [
     {
-      "src": "index.html",
-      "use": "@vercel/static-build",
+      "src": "dist/index.html",
+      "use": "@vercel/static",
       "config": {
         "distDir": "dist"
       }
     }
   ],
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }

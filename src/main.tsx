@@ -10,6 +10,16 @@ import {
 import App from "./App";
 import "./index.css";
 
+// Log environment variables
+console.log({
+  VITE_ENV: import.meta.env.VITE_ENV,
+  VITE_APPSYNC_URL: import.meta.env.VITE_APPSYNC_URL,
+  VITE_APPSYNC_REGION: import.meta.env.VITE_APPSYNC_REGION,
+  VITE_APPSYNC_API_KEY: import.meta.env.VITE_APPSYNC_API_KEY
+    ? "Set"
+    : "Missing",
+});
+
 // Environment variables
 const env = import.meta.env.VITE_ENV;
 const isDevelopment = env === "development";
