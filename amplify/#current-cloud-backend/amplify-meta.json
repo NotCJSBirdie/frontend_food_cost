@@ -11,5 +11,19 @@
       "StackId": "arn:aws:cloudformation:ap-southeast-2:795796019955:stack/amplify-frontend-dev-e7cfe/e871aae0-4f65-11f0-a8ad-02315906b2af",
       "AmplifyAppId": "d2qv7o8zflnrg7"
     }
+  },
+  "hosting": {
+    "amplifyhosting": {
+      "providerPlugin": "awscloudformation",
+      "service": "amplifyhosting",
+      "type": "manual",
+      "providerMetadata": {
+        "s3TemplateURL": "https://s3.amazonaws.com/amplify-frontend-dev-e7cfe-deployment/amplify-cfn-templates/hosting/amplifyhosting-template.json",
+        "logicalId": "hostingamplifyhosting"
+      },
+      "lastPushTimeStamp": "2025-06-22T13:12:43.289Z",
+      "output": {},
+      "lastPushDirHash": "QOQ8G2IW6HVSeDMaAq+vJ4NN0uY="
+    }
   }
 }
