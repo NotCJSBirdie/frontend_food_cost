@@ -45,19 +45,30 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-southeast-2
 
-      # Set up AWS CLI credentials file
-      - name: Set up AWS CLI credentials
-        run: |
-          mkdir -p ~/.aws
-          echo "[default]" > ~/.aws/credentials
-          echo "aws_access_key_id = ${{ secrets.AWS_ACCESS_KEY_ID }}" >> ~/.aws/credentials
-          echo "aws_secret_access_key = ${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ~/.aws/credentials
-          echo "[default]" > ~/.aws/config
-          echo "region = ap-southeast-2" >> ~/.aws/config
-
       # Install AWS Amplify CLI
       - name: Install Amplify CLI
-        run: npm install -g @aws-amplify/cli@12.10.1
+        run: npm install -g @aws-amplify/cli
+
+      # Debug environment (before Amplify commands)
+      - name: Debug environment
+        run: |
+          pwd
+          ls -la
+          ls -la dist/ || echo "dist/ directory not found"
+          ls -la amplify/ || echo "amplify/ directory not found"
+          amplify env list || echo "Failed to list environments"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ap-southeast-2
+
+      # Initialize Amplify environment
+      - name: Initialize Amplify environment
+        run: amplify init --appId d2qv7o8zflnrg7 --envName dev --yes
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ap-southeast-2
 
       # Select Amplify environment
       - name: Select Amplify environment
@@ -66,24 +77,14 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ap-southeast-2
-          AMPLIFY_DIR: /tmp/amplify
-          AMPLIFY_USER_DIR: /tmp/amplify-user
 
-      # Debug environment
-      - name: Debug environment
-        run: |
-          pwd
-          ls -la
-          ls -la dist/
-          ls -la amplify/
-          amplify env list
-          amplify status --env-name dev
+      # Verify Amplify status
+      - name: Verify Amplify status
+        run: amplify status --env-name dev
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ap-southeast-2
-          AMPLIFY_DIR: /tmp/amplify
-          AMPLIFY_USER_DIR: /tmp/amplify-user
 
       # Deploy to AWS Amplify
       - name: Deploy to Amplify
@@ -92,5 +93,3 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ap-southeast-2
-          AMPLIFY_DIR: /tmp/amplify
-          AMPLIFY_USER_DIR: /tmp/amplify-user
