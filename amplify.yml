@@ -1,0 +1,20 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - npm ci
+    build:
+      commands:
+        - echo "VITE_ENV=production" >> .env
+        - echo "VITE_APPSYNC_URL=https://kh73anwd2vemfn7cyyqwpfa24a.appsync-api.ap-southeast-2.amazonaws.com/graphql" >> .env
+        - echo "VITE_APPSYNC_API_KEY=da2-zj2umpuqb5enbkyrnndgizu65a" >> .env
+        - echo "VITE_APPSYNC_REGION=ap-southeast-2" >> .env
+        - npm run build
+  artifacts:
+    baseDirectory: dist
+    files:
+      - "**/*"
+  cache:
+    paths:
+      - node_modules/**/*
