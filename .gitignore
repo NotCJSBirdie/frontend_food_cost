@@ -7,6 +7,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Node.js
 node_modules
 dist
 dist-ssr
@@ -23,10 +24,16 @@ dist-ssr
 *.sln
 *.sw?
 
-#amplify-do-not-edit-begin
-build/
-dist/
-node_modules/
+# Environment files
+.env*
+
+# Amplify files
+amplify/#current-cloud-backend
+amplify/.config/local-*
+amplify/logs
+amplify/mock-data
+amplify/mock-api-resources
+amplify/backend/.temp
 aws-exports.js
 awsconfiguration.json
 amplifyconfiguration.json
@@ -36,6 +43,8 @@ amplify-gradle-config.json
 amplifytools.xcconfig
 .secret-*
 **.sample
-#amplify-do-not-edit-end
 
-.env*
+# Explicitly include required Amplify files
+!amplify/.config/project-config.json
+!amplify/team-provider-info.json
+!amplify/backend/amplify-meta.json
