@@ -7,7 +7,7 @@ import {
   InMemoryCache,
   ApolloProvider,
   HttpLink,
-  from,
+  ApolloLink,
 } from "@apollo/client";
 import { onError } from "@apollo/client/link/error";
 import App from "./App";
@@ -52,28 +52,26 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
   }
 });
 
-// Log HTTP requests
-const loggingLink = {
-  request: (operation: any, forward: any) => {
-    console.log("Sending GraphQL request:", {
+// Logging link as ApolloLink
+const loggingLink = new ApolloLink((operation, forward) => {
+  console.log("Sending GraphQL request:", {
+    operationName: operation.operationName,
+    variables: operation.variables,
+    query: operation.query.loc?.source.body,
+  });
+  return forward(operation).map((response) => {
+    console.log("GraphQL response:", {
       operationName: operation.operationName,
-      variables: operation.variables,
-      query: operation.query.loc?.source.body,
+      data: response.data,
+      errors: response.errors,
     });
-    return forward(operation).map((response: any) => {
-      console.log("GraphQL response:", {
-        operationName: operation.operationName,
-        data: response.data,
-        errors: response.errors,
-      });
-      return response;
-    });
-  },
-};
+    return response;
+  });
+});
 
 // Local Apollo Client
 const localClient = new ApolloClient({
-  link: from([
+  link: ApolloLink.from([
     errorLink,
     new HttpLink({ uri: import.meta.env.VITE_LOCAL_GRAPHQL_URL }),
   ]),
@@ -107,8 +105,8 @@ if (!isDevelopment) {
 const appSyncClient = isDevelopment
   ? localClient
   : new ApolloClient({
-      link: from([
-        loggingLink as any,
+      link: ApolloLink.from([
+        loggingLink,
         errorLink,
         new HttpLink({
           uri: import.meta.env.VITE_APPSYNC_URL,
