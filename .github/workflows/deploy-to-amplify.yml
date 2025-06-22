@@ -55,18 +55,13 @@ jobs:
           echo "[default]" > ~/.aws/config
           echo "region = ap-southeast-2" >> ~/.aws/config
 
-      # Install AWS Amplify CLI
-      - name: Install Amplify CLI
-        run: npm install -g @aws-amplify/cli@latest
-
-      # Debug Amplify environment
-      - name: Debug Amplify environment
+      # Debug environment
+      - name: Debug environment
         run: |
           pwd
           ls -la
           ls -la dist/
-          amplify env list
-          amplify status
+          aws sts get-caller-identity
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -80,11 +75,12 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ap-southeast-2
 
-      # Deploy to AWS Amplify (trigger CloudFormation update)
-      - name: Deploy to Amplify
-        run: amplify publish --yes --skip-upload
+      # Invalidate CloudFront distribution
+      - name: Invalidate CloudFront
+        run: |
+          DISTRIBUTION_ID=$(aws amplify list-apps --query "apps[?appId=='${{ secrets.AMPLIFY_APP_ID }}'].productionBranch.distributionId" --output text)
+          aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ap-southeast-2
-          AMPLIFY_DIR: /tmp/amplify
