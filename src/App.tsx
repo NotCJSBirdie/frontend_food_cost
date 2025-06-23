@@ -213,10 +213,7 @@ function App() {
     {
       onCompleted: (data) => {
         console.log("DELETE_INGREDIENT mutation completed:", data);
-        if (data.deleteIngredient === null) {
-          console.warn("deleteIngredient returned null");
-          alert("Failed to delete ingredient: Unexpected response from server");
-        } else if (data.deleteIngredient) {
+        if (data.deleteIngredient) {
           alert("Ingredient deleted successfully");
         } else {
           alert("Failed to delete ingredient: It may not exist");
@@ -229,7 +226,11 @@ function App() {
           graphQLErrors: err.graphQLErrors,
           networkError: err.networkError,
         });
-        alert(`Failed to delete ingredient: ${err.message}`);
+        const errorMessage =
+          err.graphQLErrors?.[0]?.message ||
+          err.networkError?.message ||
+          "Failed to delete ingredient";
+        alert(`Failed to delete ingredient: ${errorMessage}`);
       },
     }
   );
@@ -238,10 +239,7 @@ function App() {
     {
       onCompleted: (data) => {
         console.log("DELETE_RECIPE mutation completed:", data);
-        if (data.deleteRecipe === null) {
-          console.warn("deleteRecipe returned null");
-          alert("Failed to delete recipe: Unexpected response from server");
-        } else if (data.deleteRecipe) {
+        if (data.deleteRecipe) {
           alert("Recipe deleted successfully");
         } else {
           alert("Failed to delete recipe: It may not exist");
@@ -254,17 +252,18 @@ function App() {
           graphQLErrors: err.graphQLErrors,
           networkError: err.networkError,
         });
-        alert(`Failed to delete recipe: ${err.message}`);
+        const errorMessage =
+          err.graphQLErrors?.[0]?.message ||
+          err.networkError?.message ||
+          "Failed to delete recipe";
+        alert(`Failed to delete recipe: ${errorMessage}`);
       },
     }
   );
   const [deleteSale, { error: deleteSaleError }] = useMutation(DELETE_SALE, {
     onCompleted: (data) => {
       console.log("DELETE_SALE mutation completed:", data);
-      if (data.deleteSale === null) {
-        console.warn("deleteSale returned null");
-        alert("Failed to delete sale: Unexpected response from server");
-      } else if (data.deleteSale) {
+      if (data.deleteSale) {
         alert("Sale deleted successfully");
       } else {
         alert("Failed to delete sale: It may not exist");
@@ -277,7 +276,11 @@ function App() {
         graphQLErrors: err.graphQLErrors,
         networkError: err.networkError,
       });
-      alert(`Failed to delete sale: ${err.message}`);
+      const errorMessage =
+        err.graphQLErrors?.[0]?.message ||
+        err.networkError?.message ||
+        "Failed to delete sale";
+      alert(`Failed to delete sale: ${errorMessage}`);
     },
   });
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -297,7 +300,6 @@ function App() {
     name: "",
     targetMargin: "30",
     ingredients: [{ id: "", quantity: "" }],
-    errors: {},
   });
   const [saleForm, setSaleForm] = useState({
     recipeId: "",
@@ -389,7 +391,6 @@ function App() {
           name: "",
           targetMargin: "30",
           ingredients: [{ id: "", quantity: "" }],
-          errors: {},
         });
       } catch (err: any) {
         console.error("createRecipe failed:", err);
@@ -533,7 +534,7 @@ function App() {
     console.log("Updating recipe ingredient:", { index, field, value });
     const newIngredients = [...recipeForm.ingredients];
     newIngredients[index] = { ...newIngredients[index], [field]: value };
-    setRecipeForm({ ...recipeForm, errors: newIngredients });
+    setRecipeForm({ ...recipeForm, ingredients: newIngredients });
   };
 
   console.log("Rendering tab content for:", activeTab);
