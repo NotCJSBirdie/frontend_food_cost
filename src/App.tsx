@@ -208,72 +208,78 @@ function App() {
         });
       },
     });
-  const [
-    deleteIngredient,
-    { error: deleteIngredientError, loading: deleteIngredientLoading },
-  ] = useMutation(DELETE_INGREDIENT, {
-    onCompleted: (data) => {
-      console.log("DELETE_INGREDIENT mutation completed:", data);
-      if (data.deleteIngredient) {
-        alert("Ingredient deleted successfully");
-      } else {
-        alert(
-          "Failed to delete ingredient: It may not exist or an error occurred"
-        );
-      }
-      refetch();
-    },
-    onError: (err) => {
-      console.error("DELETE_INGREDIENT mutation error:", {
-        message: err.message,
-        graphQLErrors: err.graphQLErrors,
-        networkError: err.networkError,
-      });
-      alert(`Failed to delete ingredient: ${err.message}`);
-    },
-  });
-  const [
-    deleteRecipe,
-    { error: deleteRecipeError, loading: deleteRecipeLoading },
-  ] = useMutation(DELETE_RECIPE, {
-    onCompleted: (data) => {
-      console.log("DELETE_RECIPE mutation completed:", data);
-      if (data.deleteRecipe) {
-        alert("Recipe deleted successfully");
-      } else {
-        alert("Failed to delete recipe: It may not exist or an error occurred");
-      }
-      refetch();
-    },
-    onError: (err) => {
-      console.error("DELETE_RECIPE mutation error:", {
-        message: err.message,
-        graphQLErrors: err.graphQLErrors,
-        networkError: err.networkError,
-      });
-      alert(`Failed to delete recipe: ${err.message}`);
-    },
-  });
-  const [deleteSale, { error: deleteSaleError, loading: deleteSaleLoading }] =
-    useMutation(DELETE_SALE, {
+  const [deleteIngredient, { error: deleteIngredientError }] = useMutation(
+    DELETE_INGREDIENT,
+    {
       onCompleted: (data) => {
-        console.log("DELETE_SALE mutation completed:", data);
-        if (data.deleteSale) {
-          alert("Sale deleted successfully");
+        console.log("DELETE_INGREDIENT mutation completed:", data);
+        if (data.deleteIngredient === null) {
+          console.warn("deleteIngredient returned null");
+          alert("Failed to delete ingredient: Unexpected response from server");
+        } else if (data.deleteIngredient) {
+          alert("Ingredient deleted successfully");
         } else {
-          alert("Failed to delete sale: It may not exist or an error occurred");
+          alert("Failed to delete ingredient: It may not exist");
         }
         refetch();
       },
       onError: (err) => {
-        console.error("DELETE_SALE mutation error:", {
+        console.error("DELETE_INGREDIENT mutation error:", {
           message: err.message,
           graphQLErrors: err.graphQLErrors,
           networkError: err.networkError,
         });
-        alert(`Failed to delete sale: ${err.message}`);
+        alert(`Failed to delete ingredient: ${err.message}`);
       },
-    });
+    }
+  );
+  const [deleteRecipe, { error: deleteRecipeError }] = useMutation(
+    DELETE_RECIPE,
+    {
+      onCompleted: (data) => {
+        console.log("DELETE_RECIPE mutation completed:", data);
+        if (data.deleteRecipe === null) {
+          console.warn("deleteRecipe returned null");
+          alert("Failed to delete recipe: Unexpected response from server");
+        } else if (data.deleteRecipe) {
+          alert("Recipe deleted successfully");
+        } else {
+          alert("Failed to delete recipe: It may not exist");
+        }
+        refetch();
+      },
+      onError: (err) => {
+        console.error("DELETE_RECIPE mutation error:", {
+          message: err.message,
+          graphQLErrors: err.graphQLErrors,
+          networkError: err.networkError,
+        });
+        alert(`Failed to delete recipe: ${err.message}`);
+      },
+    }
+  );
+  const [deleteSale, { error: deleteSaleError }] = useMutation(DELETE_SALE, {
+    onCompleted: (data) => {
+      console.log("DELETE_SALE mutation completed:", data);
+      if (data.deleteSale === null) {
+        console.warn("deleteSale returned null");
+        alert("Failed to delete sale: Unexpected response from server");
+      } else if (data.deleteSale) {
+        alert("Sale deleted successfully");
+      } else {
+        alert("Failed to delete sale: It may not exist");
+      }
+      refetch();
+    },
+    onError: (err) => {
+      console.error("DELETE_SALE mutation error:", {
+        message: err.message,
+        graphQLErrors: err.graphQLErrors,
+        networkError: err.networkError,
+      });
+      alert(`Failed to delete sale: ${err.message}`);
+    },
+  });
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isSubmitting, setIsSubmitting] = useState({
     ingredient: false,
@@ -291,6 +297,7 @@ function App() {
     name: "",
     targetMargin: "30",
     ingredients: [{ id: "", quantity: "" }],
+    errors: {},
   });
   const [saleForm, setSaleForm] = useState({
     recipeId: "",
@@ -298,12 +305,22 @@ function App() {
     quantitySold: "1",
   });
   const [saleFormError, setSaleFormError] = useState("");
+  const [deletingItems, setDeletingItems] = useState<{
+    ingredients: Set<string>;
+    recipes: Set<string>;
+    sales: Set<string>;
+  }>({
+    ingredients: new Set(),
+    recipes: new Set(),
+    sales: new Set(),
+  });
 
   console.log("App state:", {
     loading,
     error: error ? error.message : null,
     activeTab,
     isSubmitting,
+    deletingItems,
   });
 
   if (loading) {
@@ -341,7 +358,7 @@ function App() {
         stockQuantity: "",
         restockThreshold: "",
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error("addIngredient failed:", err);
     } finally {
       setIsSubmitting({ ...isSubmitting, ingredient: false });
@@ -372,8 +389,9 @@ function App() {
           name: "",
           targetMargin: "30",
           ingredients: [{ id: "", quantity: "" }],
+          errors: {},
         });
-      } catch (err) {
+      } catch (err: any) {
         console.error("createRecipe failed:", err);
       } finally {
         setIsSubmitting({ ...isSubmitting, recipe: false });
@@ -436,10 +454,20 @@ function App() {
     )
       return;
     console.log("Deleting ingredient:", id);
+    setDeletingItems((prev) => ({
+      ...prev,
+      ingredients: new Set(prev.ingredients).add(id),
+    }));
     try {
       await deleteIngredient({ variables: { id } });
     } catch (err) {
       console.error("deleteIngredient failed:", err);
+    } finally {
+      setDeletingItems((prev) => {
+        const newSet = new Set(prev.ingredients);
+        newSet.delete(id);
+        return { ...prev, ingredients: newSet };
+      });
     }
   };
 
@@ -451,10 +479,20 @@ function App() {
     )
       return;
     console.log("Deleting recipe:", id);
+    setDeletingItems((prev) => ({
+      ...prev,
+      recipes: new Set(prev.recipes).add(id),
+    }));
     try {
       await deleteRecipe({ variables: { id } });
     } catch (err) {
       console.error("deleteRecipe failed:", err);
+    } finally {
+      setDeletingItems((prev) => {
+        const newSet = new Set(prev.recipes);
+        newSet.delete(id);
+        return { ...prev, recipes: newSet };
+      });
     }
   };
 
@@ -462,10 +500,20 @@ function App() {
     if (!confirm(`Are you sure you want to delete sale of "${recipeName}"?`))
       return;
     console.log("Deleting sale:", id);
+    setDeletingItems((prev) => ({
+      ...prev,
+      sales: new Set(prev.sales).add(id),
+    }));
     try {
       await deleteSale({ variables: { id } });
     } catch (err) {
       console.error("deleteSale failed:", err);
+    } finally {
+      setDeletingItems((prev) => {
+        const newSet = new Set(prev.sales);
+        newSet.delete(id);
+        return { ...prev, sales: newSet };
+      });
     }
   };
 
@@ -485,7 +533,7 @@ function App() {
     console.log("Updating recipe ingredient:", { index, field, value });
     const newIngredients = [...recipeForm.ingredients];
     newIngredients[index] = { ...newIngredients[index], [field]: value };
-    setRecipeForm({ ...recipeForm, ingredients: newIngredients });
+    setRecipeForm({ ...recipeForm, errors: newIngredients });
   };
 
   console.log("Rendering tab content for:", activeTab);
@@ -670,9 +718,11 @@ function App() {
                       onClick={() =>
                         handleDeleteIngredient(ingredient.id, ingredient.name)
                       }
-                      disabled={deleteIngredientLoading}
+                      disabled={deletingItems.ingredients.has(ingredient.id)}
                     >
-                      {deleteIngredientLoading ? "Deleting..." : "Delete"}
+                      {deletingItems.ingredients.has(ingredient.id)
+                        ? "Deleting..."
+                        : "Delete"}
                     </button>
                   </div>
                 </li>
@@ -803,9 +853,11 @@ function App() {
                     <button
                       className="button delete"
                       onClick={() => handleDeleteRecipe(recipe.id, recipe.name)}
-                      disabled={deleteRecipeLoading}
+                      disabled={deletingItems.recipes.has(recipe.id)}
                     >
-                      {deleteRecipeLoading ? "Deleting..." : "Delete"}
+                      {deletingItems.recipes.has(recipe.id)
+                        ? "Deleting..."
+                        : "Delete"}
                     </button>
                     <ul className="nested-list">
                       {(recipe.ingredients ?? []).map((ri: any) => (
@@ -917,9 +969,11 @@ function App() {
                       onClick={() =>
                         handleDeleteSale(sale.id, sale.recipe?.name)
                       }
-                      disabled={deleteSaleLoading}
+                      disabled={deletingItems.sales.has(sale.id)}
                     >
-                      {deleteSaleLoading ? "Deleting..." : "Delete"}
+                      {deletingItems.sales.has(sale.id)
+                        ? "Deleting..."
+                        : "Delete"}
                     </button>
                   </div>
                 </li>
