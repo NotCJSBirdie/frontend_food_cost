@@ -162,108 +162,118 @@ function App() {
       });
     },
   });
-  const [addIngredient, { error: addIngredientError }] = useMutation(
-    ADD_INGREDIENT,
-    {
-      onCompleted: (data) => {
-        console.log("ADD_INGREDIENT mutation completed:", data);
-        refetch();
-      },
-      onError: (err) => {
-        console.error("ADD_INGREDIENT mutation error:", {
-          message: err.message,
-          graphQLErrors: err.graphQLErrors,
-          networkError: err.networkError,
-        });
-      },
-    }
-  );
-  const [createRecipe, { error: createRecipeError }] = useMutation(
-    CREATE_RECIPE,
-    {
-      onCompleted: (data) => {
-        console.log("CREATE_RECIPE mutation completed:", data);
-        refetch();
-      },
-      onError: (err) => {
-        console.error("CREATE_RECIPE mutation error:", {
-          message: err.message,
-          graphQLErrors: err.graphQLErrors,
-          networkError: err.networkError,
-        });
-      },
-    }
-  );
-  const [recordSale, { error: recordSaleError }] = useMutation(RECORD_SALE, {
+  const [
+    addIngredient,
+    { error: addIngredientError, loading: addIngredientLoading },
+  ] = useMutation(ADD_INGREDIENT, {
     onCompleted: (data) => {
-      console.log("RECORD_SALE mutation completed:", data);
+      console.log("ADD_INGREDIENT mutation completed:", data);
       refetch();
     },
     onError: (err) => {
-      console.error("RECORD_SALE mutation error:", {
+      console.error("ADD_INGREDIENT mutation error:", {
         message: err.message,
         graphQLErrors: err.graphQLErrors,
         networkError: err.networkError,
       });
     },
   });
-  const [deleteIngredient, { error: deleteIngredientError }] = useMutation(
-    DELETE_INGREDIENT,
-    {
-      onCompleted: (data) => {
-        console.log("DELETE_INGREDIENT mutation completed:", data);
-        if (data.deleteIngredient) {
-          alert("Ingredient deleted successfully");
-        }
-        refetch();
-      },
-      onError: (err) => {
-        console.error("DELETE_INGREDIENT mutation error:", {
-          message: err.message,
-          graphQLErrors: err.graphQLErrors,
-          networkError: err.networkError,
-        });
-        alert(`Failed to delete ingredient: ${err.message}`);
-      },
-    }
-  );
-  const [deleteRecipe, { error: deleteRecipeError }] = useMutation(
-    DELETE_RECIPE,
-    {
-      onCompleted: (data) => {
-        console.log("DELETE_RECIPE mutation completed:", data);
-        if (data.deleteRecipe) {
-          alert("Recipe deleted successfully");
-        }
-        refetch();
-      },
-      onError: (err) => {
-        console.error("DELETE_RECIPE mutation error:", {
-          message: err.message,
-          graphQLErrors: err.graphQLErrors,
-          networkError: err.networkError,
-        });
-        alert(`Failed to delete recipe: ${err.message}`);
-      },
-    }
-  );
-  const [deleteSale, { error: deleteSaleError }] = useMutation(DELETE_SALE, {
+  const [
+    createRecipe,
+    { error: createRecipeError, loading: createRecipeLoading },
+  ] = useMutation(CREATE_RECIPE, {
     onCompleted: (data) => {
-      console.log("DELETE_SALE mutation completed:", data);
-      if (data.deleteSale) {
-        alert("Sale deleted successfully");
+      console.log("CREATE_RECIPE mutation completed:", data);
+      refetch();
+    },
+    onError: (err) => {
+      console.error("CREATE_RECIPE mutation error:", {
+        message: err.message,
+        graphQLErrors: err.graphQLErrors,
+        networkError: err.networkError,
+      });
+    },
+  });
+  const [recordSale, { error: recordSaleError, loading: recordSaleLoading }] =
+    useMutation(RECORD_SALE, {
+      onCompleted: (data) => {
+        console.log("RECORD_SALE mutation completed:", data);
+        refetch();
+      },
+      onError: (err) => {
+        console.error("RECORD_SALE mutation error:", {
+          message: err.message,
+          graphQLErrors: err.graphQLErrors,
+          networkError: err.networkError,
+        });
+      },
+    });
+  const [
+    deleteIngredient,
+    { error: deleteIngredientError, loading: deleteIngredientLoading },
+  ] = useMutation(DELETE_INGREDIENT, {
+    onCompleted: (data) => {
+      console.log("DELETE_INGREDIENT mutation completed:", data);
+      if (data.deleteIngredient) {
+        alert("Ingredient deleted successfully");
+      } else {
+        alert(
+          "Failed to delete ingredient: It may not exist or an error occurred"
+        );
       }
       refetch();
     },
     onError: (err) => {
-      console.error("DELETE_SALE mutation error:", {
+      console.error("DELETE_INGREDIENT mutation error:", {
         message: err.message,
         graphQLErrors: err.graphQLErrors,
         networkError: err.networkError,
       });
-      alert(`Failed to delete sale: ${err.message}`);
+      alert(`Failed to delete ingredient: ${err.message}`);
     },
   });
+  const [
+    deleteRecipe,
+    { error: deleteRecipeError, loading: deleteRecipeLoading },
+  ] = useMutation(DELETE_RECIPE, {
+    onCompleted: (data) => {
+      console.log("DELETE_RECIPE mutation completed:", data);
+      if (data.deleteRecipe) {
+        alert("Recipe deleted successfully");
+      } else {
+        alert("Failed to delete recipe: It may not exist or an error occurred");
+      }
+      refetch();
+    },
+    onError: (err) => {
+      console.error("DELETE_RECIPE mutation error:", {
+        message: err.message,
+        graphQLErrors: err.graphQLErrors,
+        networkError: err.networkError,
+      });
+      alert(`Failed to delete recipe: ${err.message}`);
+    },
+  });
+  const [deleteSale, { error: deleteSaleError, loading: deleteSaleLoading }] =
+    useMutation(DELETE_SALE, {
+      onCompleted: (data) => {
+        console.log("DELETE_SALE mutation completed:", data);
+        if (data.deleteSale) {
+          alert("Sale deleted successfully");
+        } else {
+          alert("Failed to delete sale: It may not exist or an error occurred");
+        }
+        refetch();
+      },
+      onError: (err) => {
+        console.error("DELETE_SALE mutation error:", {
+          message: err.message,
+          graphQLErrors: err.graphQLErrors,
+          networkError: err.networkError,
+        });
+        alert(`Failed to delete sale: ${err.message}`);
+      },
+    });
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isSubmitting, setIsSubmitting] = useState({
     ingredient: false,
@@ -408,15 +418,23 @@ function App() {
       });
       console.log("recordSale succeeded");
       setSaleForm({ recipeId: "", saleAmount: "", quantitySold: "1" });
-    } catch (err) {
+    } catch (err: any) {
       console.error("recordSale failed:", err);
-      setSaleFormError("Failed to record sale. Please try again.");
+      setSaleFormError(
+        err.message || "Failed to record sale. Please try again."
+      );
     } finally {
       setIsSubmitting({ ...isSubmitting, sale: false });
     }
   };
 
-  const handleDeleteIngredient = async (id: string) => {
+  const handleDeleteIngredient = async (id: string, name: string) => {
+    if (
+      !confirm(
+        `Are you sure you want to delete ingredient "${name}"? This will remove it from all recipes.`
+      )
+    )
+      return;
     console.log("Deleting ingredient:", id);
     try {
       await deleteIngredient({ variables: { id } });
@@ -425,7 +443,13 @@ function App() {
     }
   };
 
-  const handleDeleteRecipe = async (id: string) => {
+  const handleDeleteRecipe = async (id: string, name: string) => {
+    if (
+      !confirm(
+        `Are you sure you want to delete recipe "${name}"? This will remove all associated sales.`
+      )
+    )
+      return;
     console.log("Deleting recipe:", id);
     try {
       await deleteRecipe({ variables: { id } });
@@ -434,7 +458,9 @@ function App() {
     }
   };
 
-  const handleDeleteSale = async (id: string) => {
+  const handleDeleteSale = async (id: string, recipeName: string) => {
+    if (!confirm(`Are you sure you want to delete sale of "${recipeName}"?`))
+      return;
     console.log("Deleting sale:", id);
     try {
       await deleteSale({ variables: { id } });
@@ -625,9 +651,9 @@ function App() {
               <button
                 type="submit"
                 className="button"
-                disabled={isSubmitting.ingredient}
+                disabled={isSubmitting.ingredient || addIngredientLoading}
               >
-                {isSubmitting.ingredient ? "Adding..." : "Add Ingredient"}
+                {addIngredientLoading ? "Adding..." : "Add Ingredient"}
               </button>
             </form>
             <ul className="list">
@@ -641,9 +667,12 @@ function App() {
                     {ingredient.restockThreshold ?? 0})
                     <button
                       className="button delete"
-                      onClick={() => handleDeleteIngredient(ingredient.id)}
+                      onClick={() =>
+                        handleDeleteIngredient(ingredient.id, ingredient.name)
+                      }
+                      disabled={deleteIngredientLoading}
                     >
-                      Delete
+                      {deleteIngredientLoading ? "Deleting..." : "Delete"}
                     </button>
                   </div>
                 </li>
@@ -759,9 +788,9 @@ function App() {
               <button
                 type="submit"
                 className="button"
-                disabled={isSubmitting.recipe}
+                disabled={isSubmitting.recipe || createRecipeLoading}
               >
-                {isSubmitting.recipe ? "Creating..." : "Create Recipe"}
+                {createRecipeLoading ? "Creating..." : "Create Recipe"}
               </button>
             </form>
             <ul className="list">
@@ -773,9 +802,10 @@ function App() {
                     {(recipe.suggestedPrice ?? 0).toFixed(2)})
                     <button
                       className="button delete"
-                      onClick={() => handleDeleteRecipe(recipe.id)}
+                      onClick={() => handleDeleteRecipe(recipe.id, recipe.name)}
+                      disabled={deleteRecipeLoading}
                     >
-                      Delete
+                      {deleteRecipeLoading ? "Deleting..." : "Delete"}
                     </button>
                     <ul className="nested-list">
                       {(recipe.ingredients ?? []).map((ri: any) => (
@@ -867,9 +897,9 @@ function App() {
               <button
                 type="submit"
                 className="button"
-                disabled={isSubmitting.sale}
+                disabled={isSubmitting.sale || recordSaleLoading}
               >
-                {isSubmitting.sale ? "Recording..." : "Record Sale"}
+                {recordSaleLoading ? "Recording..." : "Record Sale"}
               </button>
             </form>
             <ul className="list">
@@ -884,9 +914,12 @@ function App() {
                     )
                     <button
                       className="button delete"
-                      onClick={() => handleDeleteSale(sale.id)}
+                      onClick={() =>
+                        handleDeleteSale(sale.id, sale.recipe?.name)
+                      }
+                      disabled={deleteSaleLoading}
                     >
-                      Delete
+                      {deleteSaleLoading ? "Deleting..." : "Delete"}
                     </button>
                   </div>
                 </li>
