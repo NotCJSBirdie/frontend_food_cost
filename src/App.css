@@ -250,3 +250,22 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+.list-item-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.button.delete {
+  background-color: #ff4d4f;
+  color: white;
+  padding: 5px 10px;
+  font-size: 0.9rem;
+  margin-left: 10px;
+}
+
+.button.delete:hover {
+  background-color: #d9363e;
+}

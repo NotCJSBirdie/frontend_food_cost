@@ -130,6 +130,24 @@ const RECORD_SALE = gql`
   }
 `;
 
+const DELETE_INGREDIENT = gql`
+  mutation DeleteIngredient($id: ID!) {
+    deleteIngredient(id: $id)
+  }
+`;
+
+const DELETE_RECIPE = gql`
+  mutation DeleteRecipe($id: ID!) {
+    deleteRecipe(id: $id)
+  }
+`;
+
+const DELETE_SALE = gql`
+  mutation DeleteSale($id: ID!) {
+    deleteSale(id: $id)
+  }
+`;
+
 function App() {
   console.log("Rendering App component...");
   const { loading, error, data, refetch } = useQuery(GET_DATA, {
@@ -183,6 +201,51 @@ function App() {
     },
     onError: (err) => {
       console.error("RECORD_SALE mutation error:", {
+        message: err.message,
+        graphQLErrors: err.graphQLErrors,
+        networkError: err.networkError,
+      });
+    },
+  });
+  const [deleteIngredient, { error: deleteIngredientError }] = useMutation(
+    DELETE_INGREDIENT,
+    {
+      onCompleted: (data) => {
+        console.log("DELETE_INGREDIENT mutation completed:", data);
+        refetch();
+      },
+      onError: (err) => {
+        console.error("DELETE_INGREDIENT mutation error:", {
+          message: err.message,
+          graphQLErrors: err.graphQLErrors,
+          networkError: err.networkError,
+        });
+      },
+    }
+  );
+  const [deleteRecipe, { error: deleteRecipeError }] = useMutation(
+    DELETE_RECIPE,
+    {
+      onCompleted: (data) => {
+        console.log("DELETE_RECIPE mutation completed:", data);
+        refetch();
+      },
+      onError: (err) => {
+        console.error("DELETE_RECIPE mutation error:", {
+          message: err.message,
+          graphQLErrors: err.graphQLErrors,
+          networkError: err.networkError,
+        });
+      },
+    }
+  );
+  const [deleteSale, { error: deleteSaleError }] = useMutation(DELETE_SALE, {
+    onCompleted: (data) => {
+      console.log("DELETE_SALE mutation completed:", data);
+      refetch();
+    },
+    onError: (err) => {
+      console.error("DELETE_SALE mutation error:", {
         message: err.message,
         graphQLErrors: err.graphQLErrors,
         networkError: err.networkError,
@@ -341,6 +404,42 @@ function App() {
     }
   };
 
+  const handleDeleteIngredient = async (id: string) => {
+    console.log("Deleting ingredient:", id);
+    try {
+      const result = await deleteIngredient({ variables: { id } });
+      if (!result.data.deleteIngredient) {
+        alert("Cannot delete ingredient: it may be used in recipes");
+      }
+    } catch (err) {
+      console.error("deleteIngredient failed:", err);
+    }
+  };
+
+  const handleDeleteRecipe = async (id: string) => {
+    console.log("Deleting recipe:", id);
+    try {
+      const result = await deleteRecipe({ variables: { id } });
+      if (!result.data.deleteRecipe) {
+        alert("Cannot delete recipe: it may have associated sales");
+      }
+    } catch (err) {
+      console.error("deleteRecipe failed:", err);
+    }
+  };
+
+  const handleDeleteSale = async (id: string) => {
+    console.log("Deleting sale:", id);
+    try {
+      const result = await deleteSale({ variables: { id } });
+      if (!result.data.deleteSale) {
+        alert("Cannot delete sale");
+      }
+    } catch (err) {
+      console.error("deleteSale failed:", err);
+    }
+  };
+
   const addIngredientToRecipe = () => {
     console.log("Adding ingredient to recipe form");
     setRecipeForm({
@@ -417,6 +516,9 @@ function App() {
             <h2 className="card-title">Ingredients</h2>
             {addIngredientError && (
               <p className="error">Error: {addIngredientError.message}</p>
+            )}
+            {deleteIngredientError && (
+              <p className="error">Error: {deleteIngredientError.message}</p>
             )}
             <form onSubmit={handleAddIngredient} className="form">
               <div className="form-group">
@@ -528,11 +630,19 @@ function App() {
             <ul className="list">
               {(data?.ingredients ?? []).map((ingredient: any) => (
                 <li key={ingredient.id} className="list-item">
-                  {ingredient.name ?? "Unknown"}: £
-                  {(ingredient.unitPrice ?? 0).toFixed(2)}/
-                  {ingredient.unit ?? ""}, Stock:{" "}
-                  {ingredient.stockQuantity ?? 0} (Threshold:{" "}
-                  {ingredient.restockThreshold ?? 0})
+                  <div className="list-item-content">
+                    {ingredient.name ?? "Unknown"}: £
+                    {(ingredient.unitPrice ?? 0).toFixed(2)}/
+                    {ingredient.unit ?? ""}, Stock:{" "}
+                    {ingredient.stockQuantity ?? 0} (Threshold:{" "}
+                    {ingredient.restockThreshold ?? 0})
+                    <button
+                      className="button delete"
+                      onClick={() => handleDeleteIngredient(ingredient.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -545,6 +655,9 @@ function App() {
             <h2 className="card-title">Create Recipe</h2>
             {createRecipeError && (
               <p className="error">Error: {createRecipeError.message}</p>
+            )}
+            {deleteRecipeError && (
+              <p className="error">Error: {deleteRecipeError.message}</p>
             )}
             <form onSubmit={handleCreateRecipe} className="form">
               <div className="form-group">
@@ -651,10 +764,16 @@ function App() {
             <ul className="list">
               {(data?.recipes ?? []).map((recipe: any) => (
                 <li key={recipe.id} className="list-item">
-                  <div>
+                  <div className="list-item-content">
                     {recipe.name ?? "Unknown"}: £
                     {(recipe.totalCost ?? 0).toFixed(2)} (Suggested Price: £
                     {(recipe.suggestedPrice ?? 0).toFixed(2)})
+                    <button
+                      className="button delete"
+                      onClick={() => handleDeleteRecipe(recipe.id)}
+                    >
+                      Delete
+                    </button>
                     <ul className="nested-list">
                       {(recipe.ingredients ?? []).map((ri: any) => (
                         <li key={ri.id} className="nested-list-item">
@@ -677,6 +796,9 @@ function App() {
             <h2 className="card-title">Record Sale</h2>
             {recordSaleError && (
               <p className="error">Error: {recordSaleError.message}</p>
+            )}
+            {deleteSaleError && (
+              <p className="error">Error: {deleteSaleError.message}</p>
             )}
             {saleFormError && <p className="error">{saleFormError}</p>}
             <form onSubmit={handleRecordSale} className="form">
@@ -750,12 +872,20 @@ function App() {
             <ul className="list">
               {(data?.sales ?? []).map((sale: any) => (
                 <li key={sale.id} className="list-item">
-                  Sale of {sale.recipe?.name ?? "Unknown"}: £
-                  {(sale.saleAmount ?? 0).toFixed(2)} (Created:{" "}
-                  {sale.createdAt
-                    ? new Date(sale.createdAt).toLocaleDateString()
-                    : "N/A"}
-                  )
+                  <div className="list-item-content">
+                    Sale of {sale.recipe?.name ?? "Unknown"}: £
+                    {(sale.saleAmount ?? 0).toFixed(2)} (Created:{" "}
+                    {sale.createdAt
+                      ? new Date(sale.createdAt).toLocaleDateString()
+                      : "N/A"}
+                    )
+                    <button
+                      className="button delete"
+                      onClick={() => handleDeleteSale(sale.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
