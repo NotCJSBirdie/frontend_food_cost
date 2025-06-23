@@ -371,12 +371,14 @@ function App() {
             <div className="stats-grid">
               <div className="stat">
                 <p>
-                  Total Sales: £{data?.dashboardStats?.totalSales?.toFixed(2)}
+                  Total Sales: £
+                  {(data?.dashboardStats?.totalSales ?? 0).toFixed(2)}
                 </p>
               </div>
               <div className="stat">
                 <p>
-                  Total Costs: £{data?.dashboardStats?.totalCosts?.toFixed(2)}
+                  Total Costs: £
+                  {(data?.dashboardStats?.totalCosts ?? 0).toFixed(2)}
                 </p>
               </div>
               <div className="stat">
@@ -384,23 +386,24 @@ function App() {
                   Total Margin:{" "}
                   <span
                     className={
-                      data?.dashboardStats?.totalMargin >= 0
+                      (data?.dashboardStats?.totalMargin ?? 0) >= 0
                         ? "margin-positive"
                         : "margin-negative"
                     }
                   >
-                    £{data?.dashboardStats?.totalMargin?.toFixed(2)}
+                    £{(data?.dashboardStats?.totalMargin ?? 0).toFixed(2)}
                   </span>
                 </p>
               </div>
             </div>
             <h3 className="section-title">Low Stock Alerts</h3>
             <ul className="list">
-              {data?.dashboardStats?.lowStockIngredients?.map(
+              {(data?.dashboardStats?.lowStockIngredients ?? []).map(
                 (ingredient: any) => (
                   <li key={ingredient.id} className="list-item alert">
-                    {ingredient.name}: {ingredient.stockQuantity}{" "}
-                    {ingredient.unit} (Threshold: {ingredient.restockThreshold})
+                    {ingredient.name ?? "Unknown"}:{" "}
+                    {ingredient.stockQuantity ?? 0} {ingredient.unit ?? ""}{" "}
+                    (Threshold: {ingredient.restockThreshold ?? 0})
                   </li>
                 )
               )}
@@ -523,11 +526,13 @@ function App() {
               </button>
             </form>
             <ul className="list">
-              {data?.ingredients?.map((ingredient: any) => (
+              {(data?.ingredients ?? []).map((ingredient: any) => (
                 <li key={ingredient.id} className="list-item">
-                  {ingredient.name}: £{ingredient.unitPrice.toFixed(2)}/
-                  {ingredient.unit}, Stock: {ingredient.stockQuantity}{" "}
-                  (Threshold: {ingredient.restockThreshold})
+                  {ingredient.name ?? "Unknown"}: £
+                  {(ingredient.unitPrice ?? 0).toFixed(2)}/
+                  {ingredient.unit ?? ""}, Stock:{" "}
+                  {ingredient.stockQuantity ?? 0} (Threshold:{" "}
+                  {ingredient.restockThreshold ?? 0})
                 </li>
               ))}
             </ul>
@@ -596,10 +601,11 @@ function App() {
                       <option value="" disabled>
                         Select an Ingredient
                       </option>
-                      {data?.ingredients?.map((ingredient: any) => (
+                      {(data?.ingredients ?? []).map((ingredient: any) => (
                         <option key={ingredient.id} value={ingredient.id}>
-                          {ingredient.name} (£{ingredient.unitPrice.toFixed(2)}/
-                          {ingredient.unit})
+                          {ingredient.name ?? "Unknown"} (£
+                          {(ingredient.unitPrice ?? 0).toFixed(2)}/
+                          {ingredient.unit ?? ""})
                         </option>
                       ))}
                     </select>
@@ -643,17 +649,18 @@ function App() {
               </button>
             </form>
             <ul className="list">
-              {data?.recipes?.map((recipe: any) => (
+              {(data?.recipes ?? []).map((recipe: any) => (
                 <li key={recipe.id} className="list-item">
                   <div>
-                    {recipe.name}: £{recipe.totalCost.toFixed(2)} (Suggested
-                    Price: £{recipe.suggestedPrice.toFixed(2)})
+                    {recipe.name ?? "Unknown"}: £
+                    {(recipe.totalCost ?? 0).toFixed(2)} (Suggested Price: £
+                    {(recipe.suggestedPrice ?? 0).toFixed(2)})
                     <ul className="nested-list">
-                      {recipe.ingredients.map((ri: any) => (
+                      {(recipe.ingredients ?? []).map((ri: any) => (
                         <li key={ri.id} className="nested-list-item">
-                          {ri.ingredient.name}: {ri.quantity}{" "}
-                          {ri.ingredient.unit} (£
-                          {ri.ingredient.unitPrice.toFixed(2)}/unit)
+                          {ri.ingredient?.name ?? "Unknown"}: {ri.quantity ?? 0}{" "}
+                          {ri.ingredient?.unit ?? ""} (£
+                          {(ri.ingredient?.unitPrice ?? 0).toFixed(2)}/unit)
                         </li>
                       ))}
                     </ul>
@@ -690,9 +697,10 @@ function App() {
                   <option value="" disabled>
                     Select a Recipe
                   </option>
-                  {data?.recipes?.map((recipe: any) => (
+                  {(data?.recipes ?? []).map((recipe: any) => (
                     <option key={recipe.id} value={recipe.id}>
-                      {recipe.name} (£{recipe.totalCost.toFixed(2)})
+                      {recipe.name ?? "Unknown"} (£
+                      {(recipe.totalCost ?? 0).toFixed(2)})
                     </option>
                   ))}
                 </select>
@@ -740,10 +748,14 @@ function App() {
               </button>
             </form>
             <ul className="list">
-              {data?.sales?.map((sale: any) => (
+              {(data?.sales ?? []).map((sale: any) => (
                 <li key={sale.id} className="list-item">
-                  Sale of {sale.recipe.name}: £{sale.saleAmount.toFixed(2)}{" "}
-                  (Created: {new Date(sale.createdAt).toLocaleDateString()})
+                  Sale of {sale.recipe?.name ?? "Unknown"}: £
+                  {(sale.saleAmount ?? 0).toFixed(2)} (Created:{" "}
+                  {sale.createdAt
+                    ? new Date(sale.createdAt).toLocaleDateString()
+                    : "N/A"}
+                  )
                 </li>
               ))}
             </ul>

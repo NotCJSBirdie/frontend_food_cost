@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { Amplify } from "aws-amplify";
 import {
   ApolloClient,
   InMemoryCache,
@@ -17,7 +16,6 @@ import "./index.css";
 console.log("Environment variables:", {
   VITE_ENV: import.meta.env.VITE_ENV,
   VITE_APPSYNC_URL: import.meta.env.VITE_APPSYNC_URL,
-  VITE_APPSYNC_REGION: import.meta.env.VITE_APPSYNC_REGION,
   VITE_APPSYNC_API_KEY: import.meta.env.VITE_APPSYNC_API_KEY
     ? "Set"
     : "Missing",
@@ -69,54 +67,24 @@ const loggingLink = new ApolloLink((operation, forward) => {
   });
 });
 
-// Local Apollo Client
-const localClient = new ApolloClient({
+// Apollo Client configuration
+const client = new ApolloClient({
   link: ApolloLink.from([
+    loggingLink,
     errorLink,
-    new HttpLink({ uri: import.meta.env.VITE_LOCAL_GRAPHQL_URL }),
+    new HttpLink({
+      uri: isDevelopment
+        ? import.meta.env.VITE_LOCAL_GRAPHQL_URL
+        : import.meta.env.VITE_APPSYNC_URL,
+      headers: isDevelopment
+        ? {}
+        : {
+            "x-api-key": import.meta.env.VITE_APPSYNC_API_KEY,
+          },
+    }),
   ]),
   cache: new InMemoryCache(),
 });
-
-// Amplify configuration for AppSync (production)
-if (!isDevelopment) {
-  console.log("Configuring Amplify for AppSync...");
-  try {
-    Amplify.configure({
-      API: {
-        GraphQL: {
-          endpoint: import.meta.env.VITE_APPSYNC_URL,
-          region: import.meta.env.VITE_APPSYNC_REGION,
-          defaultAuthMode: "apiKey",
-          apiKey: import.meta.env.VITE_APPSYNC_API_KEY,
-        },
-      },
-    });
-    console.log("Amplify configured successfully");
-  } catch (error: any) {
-    console.error("Amplify configuration error:", {
-      message: error.message,
-      stack: error.stack,
-    });
-  }
-}
-
-// Apollo Client for AppSync (production)
-const appSyncClient = isDevelopment
-  ? localClient
-  : new ApolloClient({
-      link: ApolloLink.from([
-        loggingLink,
-        errorLink,
-        new HttpLink({
-          uri: import.meta.env.VITE_APPSYNC_URL,
-          headers: {
-            "x-api-key": import.meta.env.VITE_APPSYNC_API_KEY,
-          },
-        }),
-      ]),
-      cache: new InMemoryCache(),
-    });
 
 console.log("Apollo Client initialized:", {
   isDevelopment,
@@ -126,7 +94,7 @@ console.log("Apollo Client initialized:", {
 });
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <ApolloProvider client={appSyncClient}>
+  <ApolloProvider client={client}>
     <React.StrictMode>
       <App />
     </React.StrictMode>
