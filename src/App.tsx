@@ -212,6 +212,9 @@ function App() {
     {
       onCompleted: (data) => {
         console.log("DELETE_INGREDIENT mutation completed:", data);
+        if (data.deleteIngredient) {
+          alert("Ingredient deleted successfully");
+        }
         refetch();
       },
       onError: (err) => {
@@ -220,6 +223,7 @@ function App() {
           graphQLErrors: err.graphQLErrors,
           networkError: err.networkError,
         });
+        alert(`Failed to delete ingredient: ${err.message}`);
       },
     }
   );
@@ -228,6 +232,9 @@ function App() {
     {
       onCompleted: (data) => {
         console.log("DELETE_RECIPE mutation completed:", data);
+        if (data.deleteRecipe) {
+          alert("Recipe deleted successfully");
+        }
         refetch();
       },
       onError: (err) => {
@@ -236,12 +243,16 @@ function App() {
           graphQLErrors: err.graphQLErrors,
           networkError: err.networkError,
         });
+        alert(`Failed to delete recipe: ${err.message}`);
       },
     }
   );
   const [deleteSale, { error: deleteSaleError }] = useMutation(DELETE_SALE, {
     onCompleted: (data) => {
       console.log("DELETE_SALE mutation completed:", data);
+      if (data.deleteSale) {
+        alert("Sale deleted successfully");
+      }
       refetch();
     },
     onError: (err) => {
@@ -250,6 +261,7 @@ function App() {
         graphQLErrors: err.graphQLErrors,
         networkError: err.networkError,
       });
+      alert(`Failed to delete sale: ${err.message}`);
     },
   });
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -407,10 +419,7 @@ function App() {
   const handleDeleteIngredient = async (id: string) => {
     console.log("Deleting ingredient:", id);
     try {
-      const result = await deleteIngredient({ variables: { id } });
-      if (!result.data.deleteIngredient) {
-        alert("Cannot delete ingredient: it may be used in recipes");
-      }
+      await deleteIngredient({ variables: { id } });
     } catch (err) {
       console.error("deleteIngredient failed:", err);
     }
@@ -419,10 +428,7 @@ function App() {
   const handleDeleteRecipe = async (id: string) => {
     console.log("Deleting recipe:", id);
     try {
-      const result = await deleteRecipe({ variables: { id } });
-      if (!result.data.deleteRecipe) {
-        alert("Cannot delete recipe: it may have associated sales");
-      }
+      await deleteRecipe({ variables: { id } });
     } catch (err) {
       console.error("deleteRecipe failed:", err);
     }
@@ -431,10 +437,7 @@ function App() {
   const handleDeleteSale = async (id: string) => {
     console.log("Deleting sale:", id);
     try {
-      const result = await deleteSale({ variables: { id } });
-      if (!result.data.deleteSale) {
-        alert("Cannot delete sale");
-      }
+      await deleteSale({ variables: { id } });
     } catch (err) {
       console.error("deleteSale failed:", err);
     }
