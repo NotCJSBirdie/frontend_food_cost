@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQuery, useMutation, gql } from "@apollo/client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FaTrash } from "react-icons/fa";
 import "./App.css";
 
@@ -74,6 +74,8 @@ const ADD_INGREDIENT = gql`
       unit
       stockQuantity
       restockThreshold
+      success
+      error
     }
   }
 `;
@@ -105,6 +107,8 @@ const CREATE_RECIPE = gql`
           unit
         }
       }
+      success
+      error
     }
   }
 `;
@@ -127,6 +131,8 @@ const RECORD_SALE = gql`
         id
         name
       }
+      success
+      error
     }
   }
 `;
@@ -158,71 +164,68 @@ const DELETE_SALE = gql`
   }
 `;
 
+interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  message: string;
+  type: "success" | "error" | "loading";
+}
+
+const Modal: React.FC<ModalProps> = ({
+  isOpen,
+  onClose,
+  title,
+  message,
+  type,
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay" role="dialog" aria-labelledby="modal-title">
+      <div className={`modal ${type}`}>
+        <h2 id="modal-title" className="modal-title">
+          {title}
+        </h2>
+        <p className="modal-message">{message}</p>
+        {type === "loading" ? (
+          <div className="spinner"></div>
+        ) : (
+          <button
+            className="modal-button"
+            onClick={onClose}
+            aria-label="Close modal"
+          >
+            Close
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
 function App() {
   const { loading, error, data, refetch } = useQuery(GET_DATA);
   const [
     addIngredient,
     { error: addIngredientError, loading: addIngredientLoading },
-  ] = useMutation(ADD_INGREDIENT, {
-    onCompleted: () => refetch(),
-  });
+  ] = useMutation(ADD_INGREDIENT);
   const [
     createRecipe,
     { error: createRecipeError, loading: createRecipeLoading },
-  ] = useMutation(CREATE_RECIPE, {
-    onCompleted: () => refetch(),
-  });
+  ] = useMutation(CREATE_RECIPE);
   const [recordSale, { error: recordSaleError, loading: recordSaleLoading }] =
-    useMutation(RECORD_SALE, {
-      onCompleted: () => refetch(),
-    });
+    useMutation(RECORD_SALE);
   const [
     deleteIngredient,
     { error: deleteIngredientError, loading: deleteIngredientLoading },
-  ] = useMutation(DELETE_INGREDIENT, {
-    onCompleted: (data) => {
-      if (data.deleteIngredient.success) {
-        alert("Ingredient deleted successfully");
-        refetch();
-      } else {
-        alert(
-          `Failed to delete ingredient: ${
-            data.deleteIngredient.error || "Unknown error"
-          }`
-        );
-      }
-    },
-  });
+  ] = useMutation(DELETE_INGREDIENT);
   const [
     deleteRecipe,
     { error: deleteRecipeError, loading: deleteRecipeLoading },
-  ] = useMutation(DELETE_RECIPE, {
-    onCompleted: (data) => {
-      if (data.deleteRecipe.success) {
-        alert("Recipe deleted successfully");
-        refetch();
-      } else {
-        alert(
-          `Failed to delete recipe: ${
-            data.deleteRecipe.error || "Unknown error"
-          }`
-        );
-      }
-    },
-  });
+  ] = useMutation(DELETE_RECIPE);
   const [deleteSale, { error: deleteSaleError, loading: deleteSaleLoading }] =
-    useMutation(DELETE_SALE, {
-      onCompleted: (data) => {
-        if (data.deleteSale.success) {
-          alert("Sale deleted successfully");
-          refetch();
-        } else {
-          alert(
-            `Failed to delete sale: ${data.deleteSale.error || "Unknown error"}`
-          );
-        }
-      },
-    });
+    useMutation(DELETE_SALE);
 
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isSubmitting, setIsSubmitting] = useState({
@@ -267,9 +270,77 @@ function App() {
     recipes: new Set(),
     sales: new Set(),
   });
+  const [modal, setModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: "success" | "error" | "loading";
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "success",
+  });
 
-  if (loading) return <p className="loading">Loading...</p>;
-  if (error) return <p className="error">Error: {error.message}</p>;
+  const closeModal = () => setModal({ ...modal, isOpen: false });
+
+  useEffect(() => {
+    if (addIngredientError) {
+      setModal({
+        isOpen: true,
+        title: "Error",
+        message: addIngredientError.message,
+        type: "error",
+      });
+    }
+    if (createRecipeError) {
+      setModal({
+        isOpen: true,
+        title: "Error",
+        message: createRecipeError.message,
+        type: "error",
+      });
+    }
+    if (recordSaleError) {
+      setModal({
+        isOpen: true,
+        title: "Error",
+        message: recordSaleError.message,
+        type: "error",
+      });
+    }
+    if (deleteIngredientError) {
+      setModal({
+        isOpen: true,
+        title: "Error",
+        message: deleteIngredientError.message,
+        type: "error",
+      });
+    }
+    if (deleteRecipeError) {
+      setModal({
+        isOpen: true,
+        title: "Error",
+        message: deleteRecipeError.message,
+        type: "error",
+      });
+    }
+    if (deleteSaleError) {
+      setModal({
+        isOpen: true,
+        title: "Error",
+        message: deleteSaleError.message,
+        type: "error",
+      });
+    }
+  }, [
+    addIngredientError,
+    createRecipeError,
+    recordSaleError,
+    deleteIngredientError,
+    deleteRecipeError,
+    deleteSaleError,
+  ]);
 
   const validateIngredientForm = () => {
     const errors = {
@@ -390,8 +461,15 @@ function App() {
     if (!validateIngredientForm()) return;
 
     setIsSubmitting({ ...isSubmitting, ingredient: true });
+    setModal({
+      isOpen: true,
+      title: "Adding Ingredient",
+      message: "Please wait while the ingredient is being added...",
+      type: "loading",
+    });
+
     try {
-      await addIngredient({
+      const { data } = await addIngredient({
         variables: {
           name: ingredientForm.name,
           unitPrice: parseFloat(ingredientForm.unitPrice),
@@ -400,13 +478,30 @@ function App() {
           restockThreshold: parseFloat(ingredientForm.restockThreshold),
         },
       });
-      setIngredientForm({
-        name: "",
-        unitPrice: "",
-        unit: "",
-        stockQuantity: "",
-        restockThreshold: "",
-      });
+
+      if (data.addIngredient.success === false) {
+        setModal({
+          isOpen: true,
+          title: "Error",
+          message: data.addIngredient.error || "Failed to add ingredient",
+          type: "error",
+        });
+      } else {
+        setModal({
+          isOpen: true,
+          title: "Success",
+          message: "Ingredient added successfully!",
+          type: "success",
+        });
+        setIngredientForm({
+          name: "",
+          unitPrice: "",
+          unit: "",
+          stockQuantity: "",
+          restockThreshold: "",
+        });
+        refetch();
+      }
     } catch (err: any) {
       console.error("addIngredient failed:", err);
     } finally {
@@ -419,8 +514,15 @@ function App() {
     if (!validateRecipeForm()) return;
 
     setIsSubmitting({ ...isSubmitting, recipe: true });
+    setModal({
+      isOpen: true,
+      title: "Creating Recipe",
+      message: "Please wait while the recipe is being created...",
+      type: "loading",
+    });
+
     try {
-      await createRecipe({
+      const { data } = await createRecipe({
         variables: {
           name: recipeForm.name,
           ingredientIds: recipeForm.ingredients.map((ing) => ing.id),
@@ -430,11 +532,28 @@ function App() {
           targetMargin: parseFloat(recipeForm.targetMargin) / 100,
         },
       });
-      setRecipeForm({
-        name: "",
-        targetMargin: "30",
-        ingredients: [{ id: "", quantity: "" }],
-      });
+
+      if (data.createRecipe.success === false) {
+        setModal({
+          isOpen: true,
+          title: "Error",
+          message: data.createRecipe.error || "Failed to create recipe",
+          type: "error",
+        });
+      } else {
+        setModal({
+          isOpen: true,
+          title: "Success",
+          message: "Recipe created successfully!",
+          type: "success",
+        });
+        setRecipeForm({
+          name: "",
+          targetMargin: "30",
+          ingredients: [{ id: "", quantity: "" }],
+        });
+        refetch();
+      }
     } catch (err: any) {
       console.error("createRecipe failed:", err);
     } finally {
@@ -447,15 +566,39 @@ function App() {
     if (!validateSaleForm()) return;
 
     setIsSubmitting({ ...isSubmitting, sale: true });
+    setModal({
+      isOpen: true,
+      title: "Recording Sale",
+      message: "Please wait while the sale is being recorded...",
+      type: "loading",
+    });
+
     try {
-      await recordSale({
+      const { data } = await recordSale({
         variables: {
           recipeId: saleForm.recipeId,
           saleAmount: parseFloat(saleForm.saleAmount),
           quantitySold: parseInt(saleForm.quantitySold),
         },
       });
-      setSaleForm({ recipeId: "", saleAmount: "", quantitySold: "1" });
+
+      if (data.recordSale.success === false) {
+        setModal({
+          isOpen: true,
+          title: "Error",
+          message: data.recordSale.error || "Failed to record sale",
+          type: "error",
+        });
+      } else {
+        setModal({
+          isOpen: true,
+          title: "Success",
+          message: "Sale recorded successfully!",
+          type: "success",
+        });
+        setSaleForm({ recipeId: "", saleAmount: "", quantitySold: "1" });
+        refetch();
+      }
     } catch (err: any) {
       console.error("recordSale failed:", err);
     } finally {
@@ -465,17 +608,41 @@ function App() {
 
   const handleDeleteIngredient = async (id: string, name: string) => {
     if (
-      !confirm(
+      !window.confirm(
         `Are you sure you want to delete ingredient "${name}"? This will remove it from all recipes.`
       )
     )
       return;
+
     setDeletingItems((prev) => ({
       ...prev,
       ingredients: new Set(prev.ingredients).add(id),
     }));
+    setModal({
+      isOpen: true,
+      title: "Deleting Ingredient",
+      message: `Deleting ingredient "${name}"...`,
+      type: "loading",
+    });
+
     try {
-      await deleteIngredient({ variables: { id } });
+      const { data } = await deleteIngredient({ variables: { id } });
+      if (data.deleteIngredient.success) {
+        setModal({
+          isOpen: true,
+          title: "Success",
+          message: `Ingredient "${name}" deleted successfully!`,
+          type: "success",
+        });
+        refetch();
+      } else {
+        setModal({
+          isOpen: true,
+          title: "Error",
+          message: data.deleteIngredient.error || "Failed to delete ingredient",
+          type: "error",
+        });
+      }
     } catch (err) {
       console.error("deleteIngredient failed:", err);
     } finally {
@@ -489,17 +656,41 @@ function App() {
 
   const handleDeleteRecipe = async (id: string, name: string) => {
     if (
-      !confirm(
+      !window.confirm(
         `Are you sure you want to delete recipe "${name}"? This will remove all associated sales.`
       )
     )
       return;
+
     setDeletingItems((prev) => ({
       ...prev,
       recipes: new Set(prev.recipes).add(id),
     }));
+    setModal({
+      isOpen: true,
+      title: "Deleting Recipe",
+      message: `Deleting recipe "${name}"...`,
+      type: "loading",
+    });
+
     try {
-      await deleteRecipe({ variables: { id } });
+      const { data } = await deleteRecipe({ variables: { id } });
+      if (data.deleteRecipe.success) {
+        setModal({
+          isOpen: true,
+          title: "Success",
+          message: `Recipe "${name}" deleted successfully!`,
+          type: "success",
+        });
+        refetch();
+      } else {
+        setModal({
+          isOpen: true,
+          title: "Error",
+          message: data.deleteRecipe.error || "Failed to delete recipe",
+          type: "error",
+        });
+      }
     } catch (err) {
       console.error("deleteRecipe failed:", err);
     } finally {
@@ -512,14 +703,42 @@ function App() {
   };
 
   const handleDeleteSale = async (id: string, recipeName: string) => {
-    if (!confirm(`Are you sure you want to delete sale of "${recipeName}"?`))
+    if (
+      !window.confirm(
+        `Are you sure you want to delete sale of "${recipeName}"?`
+      )
+    )
       return;
+
     setDeletingItems((prev) => ({
       ...prev,
       sales: new Set(prev.sales).add(id),
     }));
+    setModal({
+      isOpen: true,
+      title: "Deleting Sale",
+      message: `Deleting sale of "${recipeName}"...`,
+      type: "loading",
+    });
+
     try {
-      await deleteSale({ variables: { id } });
+      const { data } = await deleteSale({ variables: { id } });
+      if (data.deleteSale.success) {
+        setModal({
+          isOpen: true,
+          title: "Success",
+          message: `Sale of "${recipeName}" deleted successfully!`,
+          type: "success",
+        });
+        refetch();
+      } else {
+        setModal({
+          isOpen: true,
+          title: "Error",
+          message: data.deleteSale.error || "Failed to delete sale",
+          type: "error",
+        });
+      }
     } catch (err) {
       console.error("deleteSale failed:", err);
     } finally {
@@ -552,8 +771,10 @@ function App() {
     switch (activeTab) {
       case "dashboard":
         return (
-          <div className="card">
-            <h2 className="card-title">Dashboard</h2>
+          <div className="card" role="region" aria-labelledby="dashboard-title">
+            <h2 id="dashboard-title" className="card-title">
+              Dashboard
+            </h2>
             <div className="stats-grid">
               <div className="stat">
                 <p>
@@ -583,7 +804,7 @@ function App() {
               </div>
             </div>
             <h3 className="section-title">Low Stock Alerts</h3>
-            <ul className="list">
+            <ul className="list" aria-label="Low stock ingredients">
               {(data?.dashboardStats?.lowStockIngredients ?? []).map(
                 (ingredient: any) => (
                   <li key={ingredient.id} className="list-item alert">
@@ -631,14 +852,14 @@ function App() {
         );
       case "ingredients":
         return (
-          <div className="card">
-            <h2 className="card-title">Ingredients</h2>
-            {addIngredientError && (
-              <p className="error">Error: {addIngredientError.message}</p>
-            )}
-            {deleteIngredientError && (
-              <p className="error">Error: {deleteIngredientError.message}</p>
-            )}
+          <div
+            className="card"
+            role="region"
+            aria-labelledby="ingredients-title"
+          >
+            <h2 id="ingredients-title" className="card-title">
+              Ingredients
+            </h2>
             <form onSubmit={handleAddIngredient} className="form">
               <div className="form-group">
                 <label htmlFor="ingredient-name">Ingredient Name</label>
@@ -657,9 +878,12 @@ function App() {
                   }
                   className="input"
                   required
+                  aria-describedby="ingredient-name-error"
                 />
                 {formErrors.ingredient.name && (
-                  <p className="error">{formErrors.ingredient.name}</p>
+                  <p id="ingredient-name-error" className="error">
+                    {formErrors.ingredient.name}
+                  </p>
                 )}
               </div>
               <div className="form-group">
@@ -680,9 +904,12 @@ function App() {
                   step="0.01"
                   className="input"
                   required
+                  aria-describedby="unit-price-error"
                 />
                 {formErrors.ingredient.unitPrice && (
-                  <p className="error">{formErrors.ingredient.unitPrice}</p>
+                  <p id="unit-price-error" className="error">
+                    {formErrors.ingredient.unitPrice}
+                  </p>
                 )}
               </div>
               <div className="form-group">
@@ -702,9 +929,12 @@ function App() {
                   }
                   className="input"
                   required
+                  aria-describedby="unit-error"
                 />
                 {formErrors.ingredient.unit && (
-                  <p className="error">{formErrors.ingredient.unit}</p>
+                  <p id="unit-error" className="error">
+                    {formErrors.ingredient.unit}
+                  </p>
                 )}
               </div>
               <div className="form-group">
@@ -725,9 +955,12 @@ function App() {
                   step="0.1"
                   className="input"
                   required
+                  aria-describedby="stock-quantity-error"
                 />
                 {formErrors.ingredient.stockQuantity && (
-                  <p className="error">{formErrors.ingredient.stockQuantity}</p>
+                  <p id="stock-quantity-error" className="error">
+                    {formErrors.ingredient.stockQuantity}
+                  </p>
                 )}
               </div>
               <div className="form-group">
@@ -748,9 +981,10 @@ function App() {
                   step="0.1"
                   className="input"
                   required
+                  aria-describedby="restock-threshold-error"
                 />
                 {formErrors.ingredient.restockThreshold && (
-                  <p className="error">
+                  <p id="restock-threshold-error" className="error">
                     {formErrors.ingredient.restockThreshold}
                   </p>
                 )}
@@ -759,11 +993,12 @@ function App() {
                 type="submit"
                 className="button"
                 disabled={isSubmitting.ingredient || addIngredientLoading}
+                aria-busy={addIngredientLoading ? "true" : "false"}
               >
                 {addIngredientLoading ? "Adding..." : "Add Ingredient"}
               </button>
             </form>
-            <ul className="list">
+            <ul className="list" aria-label="Ingredients list">
               {(data?.ingredients ?? []).map((ingredient: any) => (
                 <li key={ingredient.id} className="list-item">
                   <div className="list-item-content">
@@ -787,6 +1022,7 @@ function App() {
                         deletingItems.ingredients.has(ingredient.id) ||
                         deleteIngredientLoading
                       }
+                      aria-label={`Delete ${ingredient.name}`}
                     >
                       {deletingItems.ingredients.has(ingredient.id) ||
                       deleteIngredientLoading ? (
@@ -826,14 +1062,10 @@ function App() {
         );
       case "recipes":
         return (
-          <div className="card">
-            <h2 className="card-title">Create Recipe</h2>
-            {createRecipeError && (
-              <p className="error">Error: {createRecipeError.message}</p>
-            )}
-            {deleteRecipeError && (
-              <p className="error">Error: {deleteRecipeError.message}</p>
-            )}
+          <div className="card" role="region" aria-labelledby="recipes-title">
+            <h2 id="recipes-title" className="card-title">
+              Create Recipe
+            </h2>
             <form onSubmit={handleCreateRecipe} className="form">
               <div className="form-group">
                 <label htmlFor="recipe-name">Recipe Name</label>
@@ -849,9 +1081,12 @@ function App() {
                   }
                   className="input"
                   required
+                  aria-describedby="recipe-name-error"
                 />
                 {formErrors.recipe.name && (
-                  <p className="error">{formErrors.recipe.name}</p>
+                  <p id="recipe-name-error" className="error">
+                    {formErrors.recipe.name}
+                  </p>
                 )}
               </div>
               <div className="form-group">
@@ -871,9 +1106,12 @@ function App() {
                   }
                   step="1"
                   className="input"
+                  aria-describedby="target-margin-error"
                 />
                 {formErrors.recipe.targetMargin && (
-                  <p className="error">{formErrors.recipe.targetMargin}</p>
+                  <p id="target-margin-error" className="error">
+                    {formErrors.recipe.targetMargin}
+                  </p>
                 )}
               </div>
               {recipeForm.ingredients.map((ing, index) => (
@@ -891,6 +1129,7 @@ function App() {
                       }
                       className="input"
                       required
+                      aria-describedby={`ingredient-${index}-error`}
                     >
                       <option value="" disabled>
                         Select an Ingredient
@@ -923,17 +1162,21 @@ function App() {
                       step="0.1"
                       className="input"
                       required
+                      aria-describedby={`quantity-${index}-error`}
                     />
                   </div>
                 </div>
               ))}
               {formErrors.recipe.ingredients && (
-                <p className="error">{formErrors.recipe.ingredients}</p>
+                <p id="ingredients-error" className="error">
+                  {formErrors.recipe.ingredients}
+                </p>
               )}
               <button
                 type="button"
                 className="button secondary"
                 onClick={addIngredientToRecipe}
+                aria-label="Add another ingredient"
               >
                 Add Another Ingredient
               </button>
@@ -941,11 +1184,12 @@ function App() {
                 type="submit"
                 className="button"
                 disabled={isSubmitting.recipe || createRecipeLoading}
+                aria-busy={createRecipeLoading ? "true" : "false"}
               >
                 {createRecipeLoading ? "Creating..." : "Create Recipe"}
               </button>
             </form>
-            <ul className="list">
+            <ul className="list" aria-label="Recipes list">
               {(data?.recipes ?? []).map((recipe: any) => (
                 <li key={recipe.id} className="list-item">
                   <div className="list-item-content">
@@ -974,6 +1218,7 @@ function App() {
                         deletingItems.recipes.has(recipe.id) ||
                         deleteRecipeLoading
                       }
+                      aria-label={`Delete ${recipe.name}`}
                     >
                       {deletingItems.recipes.has(recipe.id) ||
                       deleteRecipeLoading ? (
@@ -1012,14 +1257,10 @@ function App() {
         );
       case "sales":
         return (
-          <div className="card">
-            <h2 className="card-title">Record Sale</h2>
-            {recordSaleError && (
-              <p className="error">Error: {recordSaleError.message}</p>
-            )}
-            {deleteSaleError && (
-              <p className="error">Error: {deleteSaleError.message}</p>
-            )}
+          <div className="card" role="region" aria-labelledby="sales-title">
+            <h2 id="sales-title" className="card-title">
+              Record Sale
+            </h2>
             <form onSubmit={handleRecordSale} className="form">
               <div className="form-group">
                 <label htmlFor="recipe-select">Recipe</label>
@@ -1034,6 +1275,7 @@ function App() {
                   }
                   className="input"
                   required
+                  aria-describedby="recipe-select-error"
                 >
                   <option value="" disabled>
                     Select a Recipe
@@ -1046,7 +1288,9 @@ function App() {
                   ))}
                 </select>
                 {formErrors.sale.recipeId && (
-                  <p className="error">{formErrors.sale.recipeId}</p>
+                  <p id="recipe-select-error" className="error">
+                    {formErrors.sale.recipeId}
+                  </p>
                 )}
               </div>
               <div className="form-group">
@@ -1064,9 +1308,12 @@ function App() {
                   step="0.01"
                   className="input"
                   required
+                  aria-describedby="sale-amount-error"
                 />
                 {formErrors.sale.saleAmount && (
-                  <p className="error">{formErrors.sale.saleAmount}</p>
+                  <p id="sale-amount-error" className="error">
+                    {formErrors.sale.saleAmount}
+                  </p>
                 )}
               </div>
               <div className="form-group">
@@ -1084,20 +1331,24 @@ function App() {
                   step="1"
                   className="input"
                   required
+                  aria-describedby="quantity-sold-error"
                 />
                 {formErrors.sale.quantitySold && (
-                  <p className="error">{formErrors.sale.quantitySold}</p>
+                  <p id="quantity-sold-error" className="error">
+                    {formErrors.sale.quantitySold}
+                  </p>
                 )}
               </div>
               <button
                 type="submit"
                 className="button"
                 disabled={isSubmitting.sale || recordSaleLoading}
+                aria-busy={recordSaleLoading ? "true" : "false"}
               >
                 {recordSaleLoading ? "Recording..." : "Record Sale"}
               </button>
             </form>
-            <ul className="list">
+            <ul className="list" aria-label="Sales list">
               {(data?.sales ?? []).map((sale: any) => (
                 <li key={sale.id} className="list-item">
                   <div className="list-item-content">
@@ -1121,6 +1372,7 @@ function App() {
                       disabled={
                         deletingItems.sales.has(sale.id) || deleteSaleLoading
                       }
+                      aria-label={`Delete sale of ${sale.recipe?.name}`}
                     >
                       {deletingItems.sales.has(sale.id) || deleteSaleLoading ? (
                         "Deleting..."
@@ -1164,33 +1416,64 @@ function App() {
   return (
     <div className="container">
       <h1 className="title">Food Cost Manager</h1>
-      <div className="tab-bar">
+      <nav className="tab-bar" role="tablist">
         <button
           className={`tab ${activeTab === "dashboard" ? "active" : ""}`}
           onClick={() => setActiveTab("dashboard")}
+          role="tab"
+          aria-selected={activeTab === "dashboard"}
+          aria-controls="dashboard-panel"
         >
           Dashboard
         </button>
         <button
           className={`tab ${activeTab === "ingredients" ? "active" : ""}`}
           onClick={() => setActiveTab("ingredients")}
+          role="tab"
+          aria-selected={activeTab === "ingredients"}
+          aria-controls="ingredients-panel"
         >
           Ingredients
         </button>
         <button
           className={`tab ${activeTab === "recipes" ? "active" : ""}`}
           onClick={() => setActiveTab("recipes")}
+          role="tab"
+          aria-selected={activeTab === "recipes"}
+          aria-controls="recipes-panel"
         >
           Recipes
         </button>
         <button
           className={`tab ${activeTab === "sales" ? "active" : ""}`}
           onClick={() => setActiveTab("sales")}
+          role="tab"
+          aria-selected={activeTab === "sales"}
+          aria-controls="sales-panel"
         >
           Sales
         </button>
+      </nav>
+      <div className="tab-content" id={`${activeTab}-panel`} role="tabpanel">
+        {loading ? (
+          <p className="loading" aria-live="polite">
+            Loading...
+          </p>
+        ) : error ? (
+          <p className="error" aria-live="assertive">
+            Error: {error.message}
+          </p>
+        ) : (
+          renderTabContent()
+        )}
       </div>
-      <div className="tab-content">{renderTabContent()}</div>
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={closeModal}
+        title={modal.title}
+        message={modal.message}
+        type={modal.type}
+      />
       <footer className="footer">
         <p>© 2025 Carl Serquina. All rights reserved.</p>
       </footer>
