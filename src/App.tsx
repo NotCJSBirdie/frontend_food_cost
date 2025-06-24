@@ -132,19 +132,28 @@ const RECORD_SALE = gql`
 
 const DELETE_INGREDIENT = gql`
   mutation DeleteIngredient($id: ID!) {
-    deleteIngredient(id: $id)
+    deleteIngredient(id: $id) {
+      success
+      error
+    }
   }
 `;
 
 const DELETE_RECIPE = gql`
   mutation DeleteRecipe($id: ID!) {
-    deleteRecipe(id: $id)
+    deleteRecipe(id: $id) {
+      success
+      error
+    }
   }
 `;
 
 const DELETE_SALE = gql`
   mutation DeleteSale($id: ID!) {
-    deleteSale(id: $id)
+    deleteSale(id: $id) {
+      success
+      error
+    }
   }
 `;
 
@@ -208,70 +217,24 @@ function App() {
         });
       },
     });
-  const [deleteIngredient, { error: deleteIngredientError }] = useMutation(
-    DELETE_INGREDIENT,
-    {
-      onCompleted: (data) => {
-        console.log("DELETE_INGREDIENT mutation completed:", data);
-        if (data.deleteIngredient) {
-          alert("Ingredient deleted successfully");
-        } else {
-          alert("Failed to delete ingredient: It may not exist");
-        }
-        refetch();
-      },
-      onError: (err) => {
-        console.error("DELETE_INGREDIENT mutation error:", {
-          message: err.message,
-          graphQLErrors: err.graphQLErrors,
-          networkError: err.networkError,
-        });
-        const errorMessage =
-          err.graphQLErrors?.[0]?.message ||
-          err.networkError?.message ||
-          "Failed to delete ingredient";
-        alert(`Failed to delete ingredient: ${errorMessage}`);
-      },
-    }
-  );
-  const [deleteRecipe, { error: deleteRecipeError }] = useMutation(
-    DELETE_RECIPE,
-    {
-      onCompleted: (data) => {
-        console.log("DELETE_RECIPE mutation completed:", data);
-        if (data.deleteRecipe) {
-          alert("Recipe deleted successfully");
-        } else {
-          alert("Failed to delete recipe: It may not exist");
-        }
-        refetch();
-      },
-      onError: (err) => {
-        console.error("DELETE_RECIPE mutation error:", {
-          message: err.message,
-          graphQLErrors: err.graphQLErrors,
-          networkError: err.networkError,
-        });
-        const errorMessage =
-          err.graphQLErrors?.[0]?.message ||
-          err.networkError?.message ||
-          "Failed to delete recipe";
-        alert(`Failed to delete recipe: ${errorMessage}`);
-      },
-    }
-  );
-  const [deleteSale, { error: deleteSaleError }] = useMutation(DELETE_SALE, {
+  const [
+    deleteIngredient,
+    { error: deleteIngredientError, loading: deleteIngredientLoading },
+  ] = useMutation(DELETE_INGREDIENT, {
     onCompleted: (data) => {
-      console.log("DELETE_SALE mutation completed:", data);
-      if (data.deleteSale) {
-        alert("Sale deleted successfully");
+      console.log("DELETE_INGREDIENT mutation completed:", data);
+      if (data.deleteIngredient.success) {
+        alert("Ingredient deleted successfully");
       } else {
-        alert("Failed to delete sale: It may not exist");
+        alert(
+          `Failed to delete ingredient: ${
+            data.deleteIngredient.error || "Unknown error"
+          }`
+        );
       }
-      refetch();
     },
     onError: (err) => {
-      console.error("DELETE_SALE mutation error:", {
+      console.error("DELETE_INGREDIENT mutation error:", {
         message: err.message,
         graphQLErrors: err.graphQLErrors,
         networkError: err.networkError,
@@ -279,10 +242,64 @@ function App() {
       const errorMessage =
         err.graphQLErrors?.[0]?.message ||
         err.networkError?.message ||
-        "Failed to delete sale";
-      alert(`Failed to delete sale: ${errorMessage}`);
+        "Failed to delete ingredient";
+      alert(`Failed to delete ingredient: ${errorMessage}`);
     },
   });
+  const [
+    deleteRecipe,
+    { error: deleteRecipeError, loading: deleteRecipeLoading },
+  ] = useMutation(DELETE_RECIPE, {
+    onCompleted: (data) => {
+      console.log("DELETE_RECIPE mutation completed:", data);
+      if (data.deleteRecipe.success) {
+        alert("Recipe deleted successfully");
+      } else {
+        alert(
+          `Failed to delete recipe: ${
+            data.deleteRecipe.error || "Unknown error"
+          }`
+        );
+      }
+    },
+    onError: (err) => {
+      console.error("DELETE_RECIPE mutation error:", {
+        message: err.message,
+        graphQLErrors: err.graphQLErrors,
+        networkError: err.networkError,
+      });
+      const errorMessage =
+        err.graphQLErrors?.[0]?.message ||
+        err.networkError?.message ||
+        "Failed to delete recipe";
+      alert(`Failed to delete recipe: ${errorMessage}`);
+    },
+  });
+  const [deleteSale, { error: deleteSaleError, loading: deleteSaleLoading }] =
+    useMutation(DELETE_SALE, {
+      onCompleted: (data) => {
+        console.log("DELETE_SALE mutation completed:", data);
+        if (data.deleteSale.success) {
+          alert("Sale deleted successfully");
+        } else {
+          alert(
+            `Failed to delete sale: ${data.deleteSale.error || "Unknown error"}`
+          );
+        }
+      },
+      onError: (err) => {
+        console.error("DELETE_SALE mutation error:", {
+          message: err.message,
+          graphQLErrors: err.graphQLErrors,
+          networkError: err.networkError,
+        });
+        const errorMessage =
+          err.graphQLErrors?.[0]?.message ||
+          err.networkError?.message ||
+          "Failed to delete sale";
+        alert(`Failed to delete sale: ${errorMessage}`);
+      },
+    });
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isSubmitting, setIsSubmitting] = useState({
     ingredient: false,
@@ -460,7 +477,22 @@ function App() {
       ingredients: new Set(prev.ingredients).add(id),
     }));
     try {
-      await deleteIngredient({ variables: { id } });
+      await deleteIngredient({
+        variables: { id },
+        update(cache, { data: { deleteIngredient } }) {
+          if (deleteIngredient.success) {
+            cache.modify({
+              fields: {
+                ingredients(existingIngredients = [], { readField }) {
+                  return existingIngredients.filter(
+                    (ingRef: any) => readField("id", ingRef) !== id
+                  );
+                },
+              },
+            });
+          }
+        },
+      });
     } catch (err) {
       console.error("deleteIngredient failed:", err);
     } finally {
@@ -485,7 +517,22 @@ function App() {
       recipes: new Set(prev.recipes).add(id),
     }));
     try {
-      await deleteRecipe({ variables: { id } });
+      await deleteRecipe({
+        variables: { id },
+        update(cache, { data: { deleteRecipe } }) {
+          if (deleteRecipe.success) {
+            cache.modify({
+              fields: {
+                recipes(existingRecipes = [], { readField }) {
+                  return existingRecipes.filter(
+                    (recRef: any) => readField("id", recRef) !== id
+                  );
+                },
+              },
+            });
+          }
+        },
+      });
     } catch (err) {
       console.error("deleteRecipe failed:", err);
     } finally {
@@ -506,7 +553,22 @@ function App() {
       sales: new Set(prev.sales).add(id),
     }));
     try {
-      await deleteSale({ variables: { id } });
+      await deleteSale({
+        variables: { id },
+        update(cache, { data: { deleteSale } }) {
+          if (deleteSale.success) {
+            cache.modify({
+              fields: {
+                sales(existingSales = [], { readField }) {
+                  return existingSales.filter(
+                    (saleRef: any) => readField("id", saleRef) !== id
+                  );
+                },
+              },
+            });
+          }
+        },
+      });
     } catch (err) {
       console.error("deleteSale failed:", err);
     } finally {
@@ -719,9 +781,13 @@ function App() {
                       onClick={() =>
                         handleDeleteIngredient(ingredient.id, ingredient.name)
                       }
-                      disabled={deletingItems.ingredients.has(ingredient.id)}
+                      disabled={
+                        deletingItems.ingredients.has(ingredient.id) ||
+                        deleteIngredientLoading
+                      }
                     >
-                      {deletingItems.ingredients.has(ingredient.id)
+                      {deletingItems.ingredients.has(ingredient.id) ||
+                      deleteIngredientLoading
                         ? "Deleting..."
                         : "Delete"}
                     </button>
@@ -854,13 +920,17 @@ function App() {
                     <button
                       className="button delete"
                       onClick={() => handleDeleteRecipe(recipe.id, recipe.name)}
-                      disabled={deletingItems.recipes.has(recipe.id)}
+                      disabled={
+                        deletingItems.recipes.has(recipe.id) ||
+                        deleteRecipeLoading
+                      }
                     >
-                      {deletingItems.recipes.has(recipe.id)
+                      {deletingItems.recipes.has(recipe.id) ||
+                      deleteRecipeLoading
                         ? "Deleting..."
                         : "Delete"}
                     </button>
-                    <ul className="nested-list">
+                    <ul className="listing">
                       {(recipe.ingredients ?? []).map((ri: any) => (
                         <li key={ri.id} className="nested-list-item">
                           {ri.ingredient?.name ?? "Unknown"}: {ri.quantity ?? 0}{" "}
@@ -880,6 +950,7 @@ function App() {
         return (
           <div className="card">
             <h2 className="card-title">Record Sale</h2>
+            {error && error}
             {recordSaleError && (
               <p className="error">Error: {recordSaleError.message}</p>
             )}
@@ -970,9 +1041,11 @@ function App() {
                       onClick={() =>
                         handleDeleteSale(sale.id, sale.recipe?.name)
                       }
-                      disabled={deletingItems.sales.has(sale.id)}
+                      disabled={
+                        deletingItems.sales.has(sale.id) || deleteSaleLoading
+                      }
                     >
-                      {deletingItems.sales.has(sale.id)
+                      {deletingItems.sales.has(sale.id) || deleteSaleLoading
                         ? "Deleting..."
                         : "Delete"}
                     </button>
