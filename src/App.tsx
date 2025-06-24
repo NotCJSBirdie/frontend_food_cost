@@ -930,7 +930,7 @@ function App() {
                         ? "Deleting..."
                         : "Delete"}
                     </button>
-                    <ul className="listing">
+                    <ul className="nested-list">
                       {(recipe.ingredients ?? []).map((ri: any) => (
                         <li key={ri.id} className="nested-list-item">
                           {ri.ingredient?.name ?? "Unknown"}: {ri.quantity ?? 0}{" "}
@@ -950,7 +950,7 @@ function App() {
         return (
           <div className="card">
             <h2 className="card-title">Record Sale</h2>
-            {error && error}
+            {error && <p className="error">{error}</p>}
             {recordSaleError && (
               <p className="error">Error: {recordSaleError.message}</p>
             )}
