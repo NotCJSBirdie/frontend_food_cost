@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQuery, useMutation, gql } from "@apollo/client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FaTrash } from "react-icons/fa";
 import "./App.css";
 
@@ -68,14 +69,16 @@ const ADD_INGREDIENT = gql`
       stockQuantity: $stockQuantity
       restockThreshold: $restockThreshold
     ) {
-      id
-      name
-      unitPrice
-      unit
-      stockQuantity
-      restockThreshold
       success
       error
+      ingredient {
+        id
+        name
+        unitPrice
+        unit
+        stockQuantity
+        restockThreshold
+      }
     }
   }
 `;
@@ -93,22 +96,24 @@ const CREATE_RECIPE = gql`
       quantities: $quantities
       targetMargin: $targetMargin
     ) {
-      id
-      name
-      totalCost
-      suggestedPrice
-      ingredients {
-        id
-        quantity
-        ingredient {
-          id
-          name
-          unitPrice
-          unit
-        }
-      }
       success
       error
+      recipe {
+        id
+        name
+        totalCost
+        suggestedPrice
+        ingredients {
+          id
+          quantity
+          ingredient {
+            id
+            name
+            unitPrice
+            unit
+          }
+        }
+      }
     }
   }
 `;
@@ -124,15 +129,17 @@ const RECORD_SALE = gql`
       saleAmount: $saleAmount
       quantitySold: $quantitySold
     ) {
-      id
-      saleAmount
-      createdAt
-      recipe {
-        id
-        name
-      }
       success
       error
+      sale {
+        id
+        saleAmount
+        createdAt
+        recipe {
+          id
+          name
+        }
+      }
     }
   }
 `;
@@ -169,7 +176,8 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   message: string;
-  type: "success" | "error" | "loading";
+  type: "success" | "error" | "loading" | "confirm";
+  onConfirm?: () => void;
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -178,18 +186,49 @@ const Modal: React.FC<ModalProps> = ({
   title,
   message,
   type,
+  onConfirm,
 }) => {
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isOpen && modalRef.current) {
+      modalRef.current.focus();
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
     <div className="modal-overlay" role="dialog" aria-labelledby="modal-title">
-      <div className={`modal ${type}`}>
+      <div
+        className={`modal modal-${type}`}
+        ref={modalRef}
+        tabIndex={-1}
+        aria-modal="true"
+      >
         <h2 id="modal-title" className="modal-title">
           {title}
         </h2>
         <p className="modal-message">{message}</p>
         {type === "loading" ? (
-          <div className="spinner"></div>
+          <div className="loading-spinner" aria-label="Loading"></div>
+        ) : type === "confirm" ? (
+          <div className="modal-buttons">
+            <button
+              className="modal-button modal-button-confirm"
+              onClick={onConfirm}
+              aria-label="Confirm action"
+            >
+              Confirm
+            </button>
+            <button
+              className="modal-button modal-button-cancel"
+              onClick={onClose}
+              aria-label="Cancel action"
+            >
+              Cancel
+            </button>
+          </div>
         ) : (
           <button
             className="modal-button"
@@ -274,15 +313,30 @@ function App() {
     isOpen: boolean;
     title: string;
     message: string;
-    type: "success" | "error" | "loading";
+    type: "success" | "error" | "loading" | "confirm";
+    onConfirm?: () => void;
   }>({
     isOpen: false,
     title: "",
     message: "",
     type: "success",
   });
+  const [pendingAction, setPendingAction] = useState<{
+    type:
+      | "create-ingredient"
+      | "create-recipe"
+      | "record-sale"
+      | "delete-ingredient"
+      | "delete-recipe"
+      | "delete-sale"
+      | null;
+    data?: any;
+  }>({ type: null });
 
-  const closeModal = () => setModal({ ...modal, isOpen: false });
+  const closeModal = () => {
+    setModal({ ...modal, isOpen: false });
+    setPendingAction({ type: null });
+  };
 
   useEffect(() => {
     if (addIngredientError) {
@@ -412,8 +466,11 @@ function App() {
     }
 
     const targetMargin = parseFloat(recipeForm.targetMargin);
-    if (recipeForm.targetMargin && (isNaN(targetMargin) || targetMargin < 0)) {
-      errors.targetMargin = "Target margin must be a positive number";
+    if (
+      recipeForm.targetMargin &&
+      (isNaN(targetMargin) || targetMargin < 0 || targetMargin >= 100)
+    ) {
+      errors.targetMargin = "Target margin must be between 0 and 99";
       isValid = false;
     }
 
@@ -423,7 +480,7 @@ function App() {
       )
     ) {
       errors.ingredients =
-        "All ingredients must have valid ID and positive quantity";
+        "All ingredients must have a selected ingredient and positive quantity";
       isValid = false;
     }
 
@@ -442,13 +499,13 @@ function App() {
 
     const saleAmount = parseFloat(saleForm.saleAmount);
     if (!saleForm.saleAmount || isNaN(saleAmount) || saleAmount <= 0) {
-      errors.saleAmount = "Valid sale amount greater than 0 is required";
+      errors.saleAmount = "Sale amount must be greater than 0";
       isValid = false;
     }
 
     const quantitySold = parseInt(saleForm.quantitySold);
     if (!saleForm.quantitySold || isNaN(quantitySold) || quantitySold <= 0) {
-      errors.quantitySold = "Valid quantity greater than 0 is required";
+      errors.quantitySold = "Quantity sold must be greater than 0";
       isValid = false;
     }
 
@@ -456,30 +513,27 @@ function App() {
     return isValid;
   };
 
-  const handleAddIngredient = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateIngredientForm()) return;
-
+  const handleAddIngredient = async () => {
     setIsSubmitting({ ...isSubmitting, ingredient: true });
     setModal({
       isOpen: true,
       title: "Adding Ingredient",
-      message: "Please wait while the ingredient is being added...",
+      message: `Adding ingredient "${ingredientForm.name}"...`,
       type: "loading",
     });
 
     try {
       const { data } = await addIngredient({
         variables: {
-          name: ingredientForm.name,
+          name: ingredientForm.name.trim(),
           unitPrice: parseFloat(ingredientForm.unitPrice),
-          unit: ingredientForm.unit,
+          unit: ingredientForm.unit.trim(),
           stockQuantity: parseFloat(ingredientForm.stockQuantity),
           restockThreshold: parseFloat(ingredientForm.restockThreshold),
         },
       });
 
-      if (data.addIngredient.success === false) {
+      if (!data.addIngredient.success) {
         setModal({
           isOpen: true,
           title: "Error",
@@ -490,7 +544,7 @@ function App() {
         setModal({
           isOpen: true,
           title: "Success",
-          message: "Ingredient added successfully!",
+          message: `Ingredient "${ingredientForm.name}" added successfully!`,
           type: "success",
         });
         setIngredientForm({
@@ -504,36 +558,42 @@ function App() {
       }
     } catch (err: any) {
       console.error("addIngredient failed:", err);
+      setModal({
+        isOpen: true,
+        title: "Error",
+        message: err.message || "Failed to add ingredient",
+        type: "error",
+      });
     } finally {
       setIsSubmitting({ ...isSubmitting, ingredient: false });
+      setPendingAction({ type: null });
     }
   };
 
-  const handleCreateRecipe = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateRecipeForm()) return;
-
+  const handleCreateRecipe = async () => {
     setIsSubmitting({ ...isSubmitting, recipe: true });
     setModal({
       isOpen: true,
       title: "Creating Recipe",
-      message: "Please wait while the recipe is being created...",
+      message: `Creating recipe "${recipeForm.name}"...`,
       type: "loading",
     });
 
     try {
       const { data } = await createRecipe({
         variables: {
-          name: recipeForm.name,
+          name: recipeForm.name.trim(),
           ingredientIds: recipeForm.ingredients.map((ing) => ing.id),
           quantities: recipeForm.ingredients.map((ing) =>
             parseFloat(ing.quantity)
           ),
-          targetMargin: parseFloat(recipeForm.targetMargin) / 100,
+          targetMargin: recipeForm.targetMargin
+            ? parseFloat(recipeForm.targetMargin) / 100
+            : undefined,
         },
       });
 
-      if (data.createRecipe.success === false) {
+      if (!data.createRecipe.success) {
         setModal({
           isOpen: true,
           title: "Error",
@@ -544,7 +604,7 @@ function App() {
         setModal({
           isOpen: true,
           title: "Success",
-          message: "Recipe created successfully!",
+          message: `Recipe "${recipeForm.name}" created successfully!`,
           type: "success",
         });
         setRecipeForm({
@@ -556,20 +616,24 @@ function App() {
       }
     } catch (err: any) {
       console.error("createRecipe failed:", err);
+      setModal({
+        isOpen: true,
+        title: "Error",
+        message: err.message || "Failed to create recipe",
+        type: "error",
+      });
     } finally {
       setIsSubmitting({ ...isSubmitting, recipe: false });
+      setPendingAction({ type: null });
     }
   };
 
-  const handleRecordSale = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateSaleForm()) return;
-
+  const handleRecordSale = async () => {
     setIsSubmitting({ ...isSubmitting, sale: true });
     setModal({
       isOpen: true,
       title: "Recording Sale",
-      message: "Please wait while the sale is being recorded...",
+      message: `Recording sale for recipe ID ${saleForm.recipeId}...`,
       type: "loading",
     });
 
@@ -582,7 +646,7 @@ function App() {
         },
       });
 
-      if (data.recordSale.success === false) {
+      if (!data.recordSale.success) {
         setModal({
           isOpen: true,
           title: "Error",
@@ -593,7 +657,7 @@ function App() {
         setModal({
           isOpen: true,
           title: "Success",
-          message: "Sale recorded successfully!",
+          message: `Sale of "${data.recordSale.sale.recipe.name}" recorded successfully!`,
           type: "success",
         });
         setSaleForm({ recipeId: "", saleAmount: "", quantitySold: "1" });
@@ -601,19 +665,19 @@ function App() {
       }
     } catch (err: any) {
       console.error("recordSale failed:", err);
+      setModal({
+        isOpen: true,
+        title: "Error",
+        message: err.message || "Failed to record sale",
+        type: "error",
+      });
     } finally {
       setIsSubmitting({ ...isSubmitting, sale: false });
+      setPendingAction({ type: null });
     }
   };
 
   const handleDeleteIngredient = async (id: string, name: string) => {
-    if (
-      !window.confirm(
-        `Are you sure you want to delete ingredient "${name}"? This will remove it from all recipes.`
-      )
-    )
-      return;
-
     setDeletingItems((prev) => ({
       ...prev,
       ingredients: new Set(prev.ingredients).add(id),
@@ -643,25 +707,25 @@ function App() {
           type: "error",
         });
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("deleteIngredient failed:", err);
+      setModal({
+        isOpen: true,
+        title: "Error",
+        message: err.message || "Failed to delete ingredient",
+        type: "error",
+      });
     } finally {
       setDeletingItems((prev) => {
         const newSet = new Set(prev.ingredients);
         newSet.delete(id);
         return { ...prev, ingredients: newSet };
       });
+      setPendingAction({ type: null });
     }
   };
 
   const handleDeleteRecipe = async (id: string, name: string) => {
-    if (
-      !window.confirm(
-        `Are you sure you want to delete recipe "${name}"? This will remove all associated sales.`
-      )
-    )
-      return;
-
     setDeletingItems((prev) => ({
       ...prev,
       recipes: new Set(prev.recipes).add(id),
@@ -691,25 +755,25 @@ function App() {
           type: "error",
         });
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("deleteRecipe failed:", err);
+      setModal({
+        isOpen: true,
+        title: "Error",
+        message: err.message || "Failed to delete recipe",
+        type: "error",
+      });
     } finally {
       setDeletingItems((prev) => {
         const newSet = new Set(prev.recipes);
         newSet.delete(id);
         return { ...prev, recipes: newSet };
       });
+      setPendingAction({ type: null });
     }
   };
 
   const handleDeleteSale = async (id: string, recipeName: string) => {
-    if (
-      !window.confirm(
-        `Are you sure you want to delete sale of "${recipeName}"?`
-      )
-    )
-      return;
-
     setDeletingItems((prev) => ({
       ...prev,
       sales: new Set(prev.sales).add(id),
@@ -739,15 +803,140 @@ function App() {
           type: "error",
         });
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("deleteSale failed:", err);
+      setModal({
+        isOpen: true,
+        title: "Error",
+        message: err.message || "Failed to delete sale",
+        type: "error",
+      });
     } finally {
       setDeletingItems((prev) => {
         const newSet = new Set(prev.sales);
         newSet.delete(id);
         return { ...prev, sales: newSet };
       });
+      setPendingAction({ type: null });
     }
+  };
+
+  const confirmAddIngredient = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateIngredientForm()) return;
+
+    setPendingAction({ type: "create-ingredient" });
+    setModal({
+      isOpen: true,
+      title: "Confirm Add Ingredient",
+      message: `Are you sure you want to add ingredient "${ingredientForm.name}"?`,
+      type: "confirm",
+      onConfirm: handleAddIngredient,
+    });
+  };
+
+  const confirmCreateRecipe = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateRecipeForm()) return;
+
+    setPendingAction({ type: "create-recipe" });
+    setModal({
+      isOpen: true,
+      title: "Confirm Create Recipe",
+      message: `Are you sure you want to create recipe "${recipeForm.name}"?`,
+      type: "confirm",
+      onConfirm: handleCreateRecipe,
+    });
+  };
+
+  const confirmRecordSale = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateSaleForm()) return;
+
+    const recipeName =
+      data?.recipes?.find((r: any) => r.id === saleForm.recipeId)?.name ||
+      "Unknown";
+    setPendingAction({ type: "record-sale" });
+    setModal({
+      isOpen: true,
+      title: "Confirm Record Sale",
+      message: `Are you sure you want to record a sale for "${recipeName}"?`,
+      type: "confirm",
+      onConfirm: handleRecordSale,
+    });
+  };
+
+  const confirmDeleteIngredient = (id: string, name: string) => {
+    setPendingAction({ type: "delete-ingredient", data: { id, name } });
+    setModal({
+      isOpen: true,
+      title: "Confirm Delete Ingredient",
+      message: `Are you sure you want to delete ingredient "${name}"? This will remove it from all recipes.`,
+      type: "confirm",
+      onConfirm: () => handleDeleteIngredient(id, name),
+    });
+  };
+
+  const confirmDeleteRecipe = (id: string, name: string) => {
+    setPendingAction({ type: "delete-recipe", data: { id, name } });
+    setModal({
+      isOpen: true,
+      title: "Confirm Delete Recipe",
+      message: `Are you sure you want to delete recipe "${name}"? This will remove all associated sales.`,
+      type: "confirm",
+      onConfirm: () => handleDeleteRecipe(id, name),
+    });
+  };
+
+  const confirmDeleteSale = (id: string, recipeName: string) => {
+    setPendingAction({ type: "delete-sale", data: { id, recipeName } });
+    setModal({
+      isOpen: true,
+      title: "Confirm Delete Sale",
+      message: `Are you sure you want to delete sale of "${recipeName}"?`,
+      type: "confirm",
+      onConfirm: () => handleDeleteSale(id, recipeName),
+    });
+  };
+
+  const resetIngredientForm = () => {
+    setIngredientForm({
+      name: "",
+      unitPrice: "",
+      unit: "",
+      stockQuantity: "",
+      restockThreshold: "",
+    });
+    setFormErrors((prev) => ({
+      ...prev,
+      ingredient: {
+        name: "",
+        unitPrice: "",
+        unit: "",
+        stockQuantity: "",
+        restockThreshold: "",
+      },
+    }));
+  };
+
+  const resetRecipeForm = () => {
+    setRecipeForm({
+      name: "",
+      targetMargin: "30",
+      ingredients: [{ id: "", quantity: "" }],
+    });
+    setFormErrors((prev) => ({
+      ...prev,
+      recipe: { name: "", targetMargin: "", ingredients: "" },
+    }));
+  };
+
+  const resetSaleForm = () => {
+    setSaleForm({ recipeId: "", saleAmount: "", quantitySold: "1" });
+    setFormErrors((prev) => ({
+      ...prev,
+      sale: { recipeId: "", saleAmount: "", quantitySold: "" },
+    }));
   };
 
   const addIngredientToRecipe = () => {
@@ -860,11 +1049,11 @@ function App() {
             <h2 id="ingredients-title" className="card-title">
               Ingredients
             </h2>
-            <form onSubmit={handleAddIngredient} className="form">
+            <form onSubmit={confirmAddIngredient} className="form">
               <div className="form-group">
                 <label htmlFor="ingredient-name">Ingredient Name</label>
                 <p className="form-description">
-                  Enter the name of the ingredient (e.g., Flour, Sugar)
+                  Enter the name (e.g., Flour, Sugar)
                 </p>
                 <input
                   id="ingredient-name"
@@ -889,7 +1078,7 @@ function App() {
               <div className="form-group">
                 <label htmlFor="unit-price">Unit Price (£)</label>
                 <p className="form-description">
-                  Enter the price per unit (e.g., 1.50 for £1.50/kg)
+                  Price per unit (e.g., 1.50 for £1.50/kg)
                 </p>
                 <input
                   id="unit-price"
@@ -902,6 +1091,7 @@ function App() {
                     })
                   }
                   step="0.01"
+                  min="0"
                   className="input"
                   required
                   aria-describedby="unit-price-error"
@@ -915,7 +1105,7 @@ function App() {
               <div className="form-group">
                 <label htmlFor="unit">Unit</label>
                 <p className="form-description">
-                  Specify the unit of measurement (e.g., kg, g, L)
+                  Unit of measurement (e.g., kg, g, L)
                 </p>
                 <input
                   id="unit"
@@ -940,7 +1130,7 @@ function App() {
               <div className="form-group">
                 <label htmlFor="stock-quantity">Stock Quantity</label>
                 <p className="form-description">
-                  Enter the current stock amount (e.g., 10 for 10kg)
+                  Current stock amount (e.g., 10 for 10kg)
                 </p>
                 <input
                   id="stock-quantity"
@@ -953,6 +1143,7 @@ function App() {
                     })
                   }
                   step="0.1"
+                  min="0"
                   className="input"
                   required
                   aria-describedby="stock-quantity-error"
@@ -966,7 +1157,7 @@ function App() {
               <div className="form-group">
                 <label htmlFor="restock-threshold">Restock Threshold</label>
                 <p className="form-description">
-                  Set the minimum stock level before restocking is needed
+                  Minimum stock level for restocking
                 </p>
                 <input
                   id="restock-threshold"
@@ -979,6 +1170,7 @@ function App() {
                     })
                   }
                   step="0.1"
+                  min="0"
                   className="input"
                   required
                   aria-describedby="restock-threshold-error"
@@ -989,14 +1181,24 @@ function App() {
                   </p>
                 )}
               </div>
-              <button
-                type="submit"
-                className="button"
-                disabled={isSubmitting.ingredient || addIngredientLoading}
-                aria-busy={addIngredientLoading ? "true" : "false"}
-              >
-                {addIngredientLoading ? "Adding..." : "Add Ingredient"}
-              </button>
+              <div className="form-buttons">
+                <button
+                  type="submit"
+                  className="button"
+                  disabled={isSubmitting.ingredient || addIngredientLoading}
+                  aria-busy={addIngredientLoading ? "true" : "false"}
+                >
+                  {addIngredientLoading ? "Adding..." : "Add Ingredient"}
+                </button>
+                <button
+                  type="button"
+                  className="button secondary"
+                  onClick={resetIngredientForm}
+                  aria-label="Reset ingredient form"
+                >
+                  Reset
+                </button>
+              </div>
             </form>
             <ul className="list" aria-label="Ingredients list">
               {(data?.ingredients ?? []).map((ingredient: any) => (
@@ -1016,7 +1218,7 @@ function App() {
                     <button
                       className="delete-button"
                       onClick={() =>
-                        handleDeleteIngredient(ingredient.id, ingredient.name)
+                        confirmDeleteIngredient(ingredient.id, ingredient.name)
                       }
                       disabled={
                         deletingItems.ingredients.has(ingredient.id) ||
@@ -1026,7 +1228,10 @@ function App() {
                     >
                       {deletingItems.ingredients.has(ingredient.id) ||
                       deleteIngredientLoading ? (
-                        "Deleting..."
+                        <span
+                          className="loading-spinner small"
+                          aria-hidden="true"
+                        ></span>
                       ) : (
                         <FaTrash className="delete-icon" />
                       )}
@@ -1041,20 +1246,18 @@ function App() {
               <ul className="guide-list">
                 <li>
                   <strong>Add Ingredient</strong>: Fill in all fields with valid
-                  data (name, price, unit, quantity, threshold).
+                  data and confirm.
                 </li>
                 <li>
-                  <strong>Validation</strong>: Names must be ≤50 characters,
-                  prices and quantities must be positive, units must be letters
-                  only.
+                  <strong>Validation</strong>: Names ≤50 chars,
+                  prices/quantities positive, units letters only.
                 </li>
                 <li>
-                  <strong>Delete Ingredient</strong>: Click the trash icon to
-                  remove an ingredient (will affect recipes).
+                  <strong>Delete Ingredient</strong>: Confirm deletion to remove
+                  from recipes.
                 </li>
                 <li>
-                  <strong>Automatic Updates</strong>: List refreshes
-                  automatically after adding/deleting.
+                  <strong>Reset Form</strong>: Clear all fields to start over.
                 </li>
               </ul>
             </div>
@@ -1066,11 +1269,11 @@ function App() {
             <h2 id="recipes-title" className="card-title">
               Create Recipe
             </h2>
-            <form onSubmit={handleCreateRecipe} className="form">
+            <form onSubmit={confirmCreateRecipe} className="form">
               <div className="form-group">
                 <label htmlFor="recipe-name">Recipe Name</label>
                 <p className="form-description">
-                  Enter the name of the recipe (e.g., Chocolate Cake)
+                  Enter the name (e.g., Chocolate Cake)
                 </p>
                 <input
                   id="recipe-name"
@@ -1092,7 +1295,7 @@ function App() {
               <div className="form-group">
                 <label htmlFor="target-margin">Target Margin (%)</label>
                 <p className="form-description">
-                  Desired profit margin as a percentage (default is 30%)
+                  Desired profit margin (0-99, default 30%)
                 </p>
                 <input
                   id="target-margin"
@@ -1105,6 +1308,8 @@ function App() {
                     })
                   }
                   step="1"
+                  min="0"
+                  max="99"
                   className="input"
                   aria-describedby="target-margin-error"
                 />
@@ -1118,9 +1323,7 @@ function App() {
                 <div key={index} className="ingredient-row">
                   <div className="form-group">
                     <label htmlFor={`ingredient-${index}`}>Ingredient</label>
-                    <p className="form-description">
-                      Select an ingredient from the list
-                    </p>
+                    <p className="form-description">Select an ingredient</p>
                     <select
                       id={`ingredient-${index}`}
                       value={ing.id}
@@ -1145,9 +1348,7 @@ function App() {
                   </div>
                   <div className="form-group">
                     <label htmlFor={`quantity-${index}`}>Quantity</label>
-                    <p className="form-description">
-                      Enter the quantity needed for this recipe
-                    </p>
+                    <p className="form-description">Quantity needed</p>
                     <input
                       id={`quantity-${index}`}
                       type="number"
@@ -1160,6 +1361,7 @@ function App() {
                         )
                       }
                       step="0.1"
+                      min="0.1"
                       className="input"
                       required
                       aria-describedby={`quantity-${index}-error`}
@@ -1172,22 +1374,32 @@ function App() {
                   {formErrors.recipe.ingredients}
                 </p>
               )}
-              <button
-                type="button"
-                className="button secondary"
-                onClick={addIngredientToRecipe}
-                aria-label="Add another ingredient"
-              >
-                Add Another Ingredient
-              </button>
-              <button
-                type="submit"
-                className="button"
-                disabled={isSubmitting.recipe || createRecipeLoading}
-                aria-busy={createRecipeLoading ? "true" : "false"}
-              >
-                {createRecipeLoading ? "Creating..." : "Create Recipe"}
-              </button>
+              <div className="form-buttons">
+                <button
+                  type="button"
+                  className="button secondary"
+                  onClick={addIngredientToRecipe}
+                  aria-label="Add another ingredient"
+                >
+                  Add Another Ingredient
+                </button>
+                <button
+                  type="submit"
+                  className="button"
+                  disabled={isSubmitting.recipe || createRecipeLoading}
+                  aria-busy={createRecipeLoading ? "true" : "false"}
+                >
+                  {createRecipeLoading ? "Creating..." : "Create Recipe"}
+                </button>
+                <button
+                  type="button"
+                  className="button secondary"
+                  onClick={resetRecipeForm}
+                  aria-label="Reset recipe form"
+                >
+                  Reset
+                </button>
+              </div>
             </form>
             <ul className="list" aria-label="Recipes list">
               {(data?.recipes ?? []).map((recipe: any) => (
@@ -1213,7 +1425,9 @@ function App() {
                     </div>
                     <button
                       className="delete-button"
-                      onClick={() => handleDeleteRecipe(recipe.id, recipe.name)}
+                      onClick={() =>
+                        confirmDeleteRecipe(recipe.id, recipe.name)
+                      }
                       disabled={
                         deletingItems.recipes.has(recipe.id) ||
                         deleteRecipeLoading
@@ -1222,7 +1436,10 @@ function App() {
                     >
                       {deletingItems.recipes.has(recipe.id) ||
                       deleteRecipeLoading ? (
-                        "Deleting..."
+                        <span
+                          className="loading-spinner small"
+                          aria-hidden="true"
+                        ></span>
                       ) : (
                         <FaTrash className="delete-icon" />
                       )}
@@ -1236,20 +1453,19 @@ function App() {
               <p>Create and manage recipes:</p>
               <ul className="guide-list">
                 <li>
-                  <strong>Add Recipe</strong>: Enter a name and select
-                  ingredients with quantities.
+                  <strong>Add Recipe</strong>: Enter name, ingredients, and
+                  confirm creation.
                 </li>
                 <li>
-                  <strong>Validation</strong>: Names must be ≤50 characters,
-                  quantities must be positive, all ingredients must be selected.
+                  <strong>Validation</strong>: Names ≤50 chars, quantities
+                  positive, ingredients selected.
                 </li>
                 <li>
-                  <strong>Delete Recipe</strong>: Click the trash icon to remove
-                  a recipe (affects sales).
+                  <strong>Delete Recipe</strong>: Confirm deletion to remove
+                  recipe and sales.
                 </li>
                 <li>
-                  <strong>Automatic Updates</strong>: List refreshes
-                  automatically after adding/deleting.
+                  <strong>Reset Form</strong>: Clear all fields to start over.
                 </li>
               </ul>
             </div>
@@ -1261,12 +1477,10 @@ function App() {
             <h2 id="sales-title" className="card-title">
               Record Sale
             </h2>
-            <form onSubmit={handleRecordSale} className="form">
+            <form onSubmit={confirmRecordSale} className="form">
               <div className="form-group">
                 <label htmlFor="recipe-select">Recipe</label>
-                <p className="form-description">
-                  Select the recipe that was sold
-                </p>
+                <p className="form-description">Select the sold recipe</p>
                 <select
                   id="recipe-select"
                   value={saleForm.recipeId}
@@ -1295,9 +1509,7 @@ function App() {
               </div>
               <div className="form-group">
                 <label htmlFor="sale-amount">Sale Amount (£)</label>
-                <p className="form-description">
-                  Enter the total sale price for this transaction
-                </p>
+                <p className="form-description">Total sale price</p>
                 <input
                   id="sale-amount"
                   type="number"
@@ -1306,6 +1518,7 @@ function App() {
                     setSaleForm({ ...saleForm, saleAmount: e.target.value })
                   }
                   step="0.01"
+                  min="0.01"
                   className="input"
                   required
                   aria-describedby="sale-amount-error"
@@ -1318,9 +1531,7 @@ function App() {
               </div>
               <div className="form-group">
                 <label htmlFor="quantity-sold">Quantity Sold</label>
-                <p className="form-description">
-                  Enter the number of units sold
-                </p>
+                <p className="form-description">Number of units sold</p>
                 <input
                   id="quantity-sold"
                   type="number"
@@ -1329,6 +1540,7 @@ function App() {
                     setSaleForm({ ...saleForm, quantitySold: e.target.value })
                   }
                   step="1"
+                  min="1"
                   className="input"
                   required
                   aria-describedby="quantity-sold-error"
@@ -1339,14 +1551,24 @@ function App() {
                   </p>
                 )}
               </div>
-              <button
-                type="submit"
-                className="button"
-                disabled={isSubmitting.sale || recordSaleLoading}
-                aria-busy={recordSaleLoading ? "true" : "false"}
-              >
-                {recordSaleLoading ? "Recording..." : "Record Sale"}
-              </button>
+              <div className="form-buttons">
+                <button
+                  type="submit"
+                  className="button"
+                  disabled={isSubmitting.sale || recordSaleLoading}
+                  aria-busy={recordSaleLoading ? "true" : "false"}
+                >
+                  {recordSaleLoading ? "Recording..." : "Record Sale"}
+                </button>
+                <button
+                  type="button"
+                  className="button secondary"
+                  onClick={resetSaleForm}
+                  aria-label="Reset sale form"
+                >
+                  Reset
+                </button>
+              </div>
             </form>
             <ul className="list" aria-label="Sales list">
               {(data?.sales ?? []).map((sale: any) => (
@@ -1367,7 +1589,7 @@ function App() {
                     <button
                       className="delete-button"
                       onClick={() =>
-                        handleDeleteSale(sale.id, sale.recipe?.name)
+                        confirmDeleteSale(sale.id, sale.recipe?.name)
                       }
                       disabled={
                         deletingItems.sales.has(sale.id) || deleteSaleLoading
@@ -1375,7 +1597,10 @@ function App() {
                       aria-label={`Delete sale of ${sale.recipe?.name}`}
                     >
                       {deletingItems.sales.has(sale.id) || deleteSaleLoading ? (
-                        "Deleting..."
+                        <span
+                          className="loading-spinner small"
+                          aria-hidden="true"
+                        ></span>
                       ) : (
                         <FaTrash className="delete-icon" />
                       )}
@@ -1389,20 +1614,18 @@ function App() {
               <p>Record and track sales:</p>
               <ul className="guide-list">
                 <li>
-                  <strong>Record Sale</strong>: Select a recipe and enter sale
-                  amount and quantity.
+                  <strong>Record Sale</strong>: Select recipe, enter amount,
+                  quantity, and confirm.
                 </li>
                 <li>
-                  <strong>Validation</strong>: Sale amount and quantity must be
-                  positive numbers.
+                  <strong>Validation</strong>: Amount and quantity must be
+                  positive.
                 </li>
                 <li>
-                  <strong>Delete Sale</strong>: Click the trash icon to remove a
-                  sale.
+                  <strong>Delete Sale</strong>: Confirm deletion to remove sale.
                 </li>
                 <li>
-                  <strong>Automatic Updates</strong>: List refreshes
-                  automatically after adding/deleting.
+                  <strong>Reset Form</strong>: Clear all fields to start over.
                 </li>
               </ul>
             </div>
@@ -1456,9 +1679,9 @@ function App() {
       </nav>
       <div className="tab-content" id={`${activeTab}-panel`} role="tabpanel">
         {loading ? (
-          <p className="loading" aria-live="polite">
-            Loading...
-          </p>
+          <div className="loading-container" aria-live="polite">
+            <div className="loading-spinner" aria-label="Loading data"></div>
+          </div>
         ) : error ? (
           <p className="error" aria-live="assertive">
             Error: {error.message}
@@ -1473,6 +1696,7 @@ function App() {
         title={modal.title}
         message={modal.message}
         type={modal.type}
+        onConfirm={modal.onConfirm}
       />
       <footer className="footer">
         <p>© 2025 Carl Serquina. All rights reserved.</p>

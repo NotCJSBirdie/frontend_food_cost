@@ -164,7 +164,8 @@ h4 {
   margin: 0;
 }
 
-.input {
+.input,
+select {
   width: 100%;
   padding: 12px;
   border: 1px solid #ede4d0;
@@ -174,10 +175,17 @@ h4 {
   color: #271206;
 }
 
-.input:focus {
+.input:focus,
+select:focus {
   outline: none;
   border-color: #ff7a00;
   box-shadow: 0 0 0 3px rgba(255, 122, 0, 0.2);
+}
+
+.form-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .button {
@@ -225,18 +233,17 @@ h4 {
   color: #e66e00;
 }
 
+.delete-button:disabled .delete-icon {
+  color: #ffb566;
+  cursor: not-allowed;
+}
+
 .margin-positive {
   color: #ff7a00;
 }
 
 .margin-negative {
   color: #d32f2f; /* Red for negative margin */
-}
-
-.loading {
-  text-align: center;
-  color: #271206;
-  font-size: 1.5rem;
 }
 
 .error {
@@ -314,19 +321,24 @@ h4 {
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
 }
 
-.modal.success {
+.modal-success {
   border: 2px solid #4caf50; /* Green for success */
 }
 
-.modal.error {
+.modal-error {
   border: 2px solid #d32f2f; /* Red for error */
 }
 
-.modal.loading {
+.modal-loading {
   border: 2px solid #ff7a00; /* Orange for loading */
 }
 
+.modal-confirm {
+  border: 2px solid #ede4d0; /* Cream for confirmation */
+}
+
 .modal-title {
+  font-family: "Playfair Display", serif;
   font-size: 1.5rem;
   color: #271206;
   margin-bottom: 16px;
@@ -338,30 +350,73 @@ h4 {
   margin-bottom: 24px;
 }
 
-.modal-button {
+.modal-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.modal-button,
+.modal-button-confirm,
+.modal-button-cancel {
   padding: 12px 24px;
   border: none;
   border-radius: 8px;
-  background-color: #ff7a00;
-  color: #271206;
   font-size: 1rem;
   cursor: pointer;
   transition: background-color 0.3s;
+}
+
+.modal-button {
+  background-color: #ff7a00;
+  color: #271206;
 }
 
 .modal-button:hover {
   background-color: #e66e00;
 }
 
-/* Spinner Animation */
-.spinner {
-  border: 4px solid #ede4d0;
-  border-top: 4px solid #ff7a00;
+.modal-button-confirm {
+  background-color: #4caf50; /* Green for confirm */
+  color: #ffffff;
+}
+
+.modal-button-confirm:hover {
+  background-color: #388e3c; /* Darker green */
+}
+
+.modal-button-cancel {
+  background-color: #ede4d0; /* Cream for cancel */
+  color: #ff7a00;
+}
+
+.modal-button-cancel:hover {
+  background-color: #e0d7c3; /* Darker cream */
+}
+
+/* Loading Spinner */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 32px;
+}
+
+.loading-spinner {
+  border: 4px solid #ede4d0; /* Cream border */
+  border-top: 4px solid #ff7a00; /* Orange active */
   border-radius: 50%;
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   animation: spin 1s linear infinite;
   margin: 0 auto;
+}
+
+.loading-spinner.small {
+  width: 20px;
+  height: 20px;
+  border-width: 3px;
 }
 
 @keyframes spin {
