@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQuery, useMutation, gql } from "@apollo/client";
 import { useState } from "react";
+import { FaTrash } from "react-icons/fa";
 import "./App.css";
 
 const GET_DATA = gql`
@@ -158,73 +159,31 @@ const DELETE_SALE = gql`
 `;
 
 function App() {
-  console.log("Rendering App component...");
-  const { loading, error, data, refetch } = useQuery(GET_DATA, {
-    onCompleted: (data) => {
-      console.log("GET_DATA query completed:", data);
-    },
-    onError: (err) => {
-      console.error("GET_DATA query error:", {
-        message: err.message,
-        graphQLErrors: err.graphQLErrors,
-        networkError: err.networkError,
-      });
-    },
-  });
+  const { loading, error, data, refetch } = useQuery(GET_DATA);
   const [
     addIngredient,
     { error: addIngredientError, loading: addIngredientLoading },
   ] = useMutation(ADD_INGREDIENT, {
-    onCompleted: (data) => {
-      console.log("ADD_INGREDIENT mutation completed:", data);
-      refetch();
-    },
-    onError: (err) => {
-      console.error("ADD_INGREDIENT mutation error:", {
-        message: err.message,
-        graphQLErrors: err.graphQLErrors,
-        networkError: err.networkError,
-      });
-    },
+    onCompleted: () => refetch(),
   });
   const [
     createRecipe,
     { error: createRecipeError, loading: createRecipeLoading },
   ] = useMutation(CREATE_RECIPE, {
-    onCompleted: (data) => {
-      console.log("CREATE_RECIPE mutation completed:", data);
-      refetch();
-    },
-    onError: (err) => {
-      console.error("CREATE_RECIPE mutation error:", {
-        message: err.message,
-        graphQLErrors: err.graphQLErrors,
-        networkError: err.networkError,
-      });
-    },
+    onCompleted: () => refetch(),
   });
   const [recordSale, { error: recordSaleError, loading: recordSaleLoading }] =
     useMutation(RECORD_SALE, {
-      onCompleted: (data) => {
-        console.log("RECORD_SALE mutation completed:", data);
-        refetch();
-      },
-      onError: (err) => {
-        console.error("RECORD_SALE mutation error:", {
-          message: err.message,
-          graphQLErrors: err.graphQLErrors,
-          networkError: err.networkError,
-        });
-      },
+      onCompleted: () => refetch(),
     });
   const [
     deleteIngredient,
     { error: deleteIngredientError, loading: deleteIngredientLoading },
   ] = useMutation(DELETE_INGREDIENT, {
     onCompleted: (data) => {
-      console.log("DELETE_INGREDIENT mutation completed:", data);
       if (data.deleteIngredient.success) {
         alert("Ingredient deleted successfully");
+        refetch();
       } else {
         alert(
           `Failed to delete ingredient: ${
@@ -233,27 +192,15 @@ function App() {
         );
       }
     },
-    onError: (err) => {
-      console.error("DELETE_INGREDIENT mutation error:", {
-        message: err.message,
-        graphQLErrors: err.graphQLErrors,
-        networkError: err.networkError,
-      });
-      const errorMessage =
-        err.graphQLErrors?.[0]?.message ||
-        err.networkError?.message ||
-        "Failed to delete ingredient";
-      alert(`Failed to delete ingredient: ${errorMessage}`);
-    },
   });
   const [
     deleteRecipe,
     { error: deleteRecipeError, loading: deleteRecipeLoading },
   ] = useMutation(DELETE_RECIPE, {
     onCompleted: (data) => {
-      console.log("DELETE_RECIPE mutation completed:", data);
       if (data.deleteRecipe.success) {
         alert("Recipe deleted successfully");
+        refetch();
       } else {
         alert(
           `Failed to delete recipe: ${
@@ -262,44 +209,21 @@ function App() {
         );
       }
     },
-    onError: (err) => {
-      console.error("DELETE_RECIPE mutation error:", {
-        message: err.message,
-        graphQLErrors: err.graphQLErrors,
-        networkError: err.networkError,
-      });
-      const errorMessage =
-        err.graphQLErrors?.[0]?.message ||
-        err.networkError?.message ||
-        "Failed to delete recipe";
-      alert(`Failed to delete recipe: ${errorMessage}`);
-    },
   });
   const [deleteSale, { error: deleteSaleError, loading: deleteSaleLoading }] =
     useMutation(DELETE_SALE, {
       onCompleted: (data) => {
-        console.log("DELETE_SALE mutation completed:", data);
         if (data.deleteSale.success) {
           alert("Sale deleted successfully");
+          refetch();
         } else {
           alert(
             `Failed to delete sale: ${data.deleteSale.error || "Unknown error"}`
           );
         }
       },
-      onError: (err) => {
-        console.error("DELETE_SALE mutation error:", {
-          message: err.message,
-          graphQLErrors: err.graphQLErrors,
-          networkError: err.networkError,
-        });
-        const errorMessage =
-          err.graphQLErrors?.[0]?.message ||
-          err.networkError?.message ||
-          "Failed to delete sale";
-        alert(`Failed to delete sale: ${errorMessage}`);
-      },
     });
+
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isSubmitting, setIsSubmitting] = useState({
     ingredient: false,
@@ -323,7 +247,17 @@ function App() {
     saleAmount: "",
     quantitySold: "1",
   });
-  const [saleFormError, setSaleFormError] = useState("");
+  const [formErrors, setFormErrors] = useState({
+    ingredient: {
+      name: "",
+      unitPrice: "",
+      unit: "",
+      stockQuantity: "",
+      restockThreshold: "",
+    },
+    recipe: { name: "", targetMargin: "", ingredients: "" },
+    sale: { recipeId: "", saleAmount: "", quantitySold: "" },
+  });
   const [deletingItems, setDeletingItems] = useState<{
     ingredients: Set<string>;
     recipes: Set<string>;
@@ -334,30 +268,127 @@ function App() {
     sales: new Set(),
   });
 
-  console.log("App state:", {
-    loading,
-    error: error ? error.message : null,
-    activeTab,
-    isSubmitting,
-    deletingItems,
-  });
+  if (loading) return <p className="loading">Loading...</p>;
+  if (error) return <p className="error">Error: {error.message}</p>;
 
-  if (loading) {
-    console.log("App is in loading state");
-    return <p className="loading">Loading...</p>;
-  }
-  if (error) {
-    console.error("App error state:", {
-      message: error.message,
-      graphQLErrors: error.graphQLErrors,
-      networkError: error.networkError,
-    });
-    return <p className="error">Error: {error.message}</p>;
-  }
+  const validateIngredientForm = () => {
+    const errors = {
+      name: "",
+      unitPrice: "",
+      unit: "",
+      stockQuantity: "",
+      restockThreshold: "",
+    };
+    let isValid = true;
+
+    if (!ingredientForm.name.trim()) {
+      errors.name = "Ingredient name is required";
+      isValid = false;
+    } else if (ingredientForm.name.length > 50) {
+      errors.name = "Name must be 50 characters or less";
+      isValid = false;
+    }
+
+    const unitPrice = parseFloat(ingredientForm.unitPrice);
+    if (!ingredientForm.unitPrice || isNaN(unitPrice)) {
+      errors.unitPrice = "Valid unit price is required";
+      isValid = false;
+    } else if (unitPrice < 0) {
+      errors.unitPrice = "Unit price cannot be negative";
+      isValid = false;
+    }
+
+    if (!ingredientForm.unit.trim()) {
+      errors.unit = "Unit is required";
+      isValid = false;
+    } else if (!/^[a-zA-Z]+$/.test(ingredientForm.unit)) {
+      errors.unit = "Unit must contain only letters";
+      isValid = false;
+    }
+
+    const stockQuantity = parseFloat(ingredientForm.stockQuantity);
+    if (!ingredientForm.stockQuantity || isNaN(stockQuantity)) {
+      errors.stockQuantity = "Valid stock quantity is required";
+      isValid = false;
+    } else if (stockQuantity < 0) {
+      errors.stockQuantity = "Stock quantity cannot be negative";
+      isValid = false;
+    }
+
+    const restockThreshold = parseFloat(ingredientForm.restockThreshold);
+    if (!ingredientForm.restockThreshold || isNaN(restockThreshold)) {
+      errors.restockThreshold = "Valid restock threshold is required";
+      isValid = false;
+    } else if (restockThreshold < 0) {
+      errors.restockThreshold = "Restock threshold cannot be negative";
+      isValid = false;
+    }
+
+    setFormErrors((prev) => ({ ...prev, ingredient: errors }));
+    return isValid;
+  };
+
+  const validateRecipeForm = () => {
+    const errors = { name: "", targetMargin: "", ingredients: "" };
+    let isValid = true;
+
+    if (!recipeForm.name.trim()) {
+      errors.name = "Recipe name is required";
+      isValid = false;
+    } else if (recipeForm.name.length > 50) {
+      errors.name = "Name must be 50 characters or less";
+      isValid = false;
+    }
+
+    const targetMargin = parseFloat(recipeForm.targetMargin);
+    if (recipeForm.targetMargin && (isNaN(targetMargin) || targetMargin < 0)) {
+      errors.targetMargin = "Target margin must be a positive number";
+      isValid = false;
+    }
+
+    if (
+      !recipeForm.ingredients.every(
+        (ing) => ing.id && parseFloat(ing.quantity) > 0
+      )
+    ) {
+      errors.ingredients =
+        "All ingredients must have valid ID and positive quantity";
+      isValid = false;
+    }
+
+    setFormErrors((prev) => ({ ...prev, recipe: errors }));
+    return isValid;
+  };
+
+  const validateSaleForm = () => {
+    const errors = { recipeId: "", saleAmount: "", quantitySold: "" };
+    let isValid = true;
+
+    if (!saleForm.recipeId) {
+      errors.recipeId = "Please select a recipe";
+      isValid = false;
+    }
+
+    const saleAmount = parseFloat(saleForm.saleAmount);
+    if (!saleForm.saleAmount || isNaN(saleAmount) || saleAmount <= 0) {
+      errors.saleAmount = "Valid sale amount greater than 0 is required";
+      isValid = false;
+    }
+
+    const quantitySold = parseInt(saleForm.quantitySold);
+    if (!saleForm.quantitySold || isNaN(quantitySold) || quantitySold <= 0) {
+      errors.quantitySold = "Valid quantity greater than 0 is required";
+      isValid = false;
+    }
+
+    setFormErrors((prev) => ({ ...prev, sale: errors }));
+    return isValid;
+  };
 
   const handleAddIngredient = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Submitting addIngredient:", ingredientForm);
+    if (!validateIngredientForm()) return;
+
     setIsSubmitting({ ...isSubmitting, ingredient: true });
     try {
       await addIngredient({
@@ -369,7 +400,6 @@ function App() {
           restockThreshold: parseFloat(ingredientForm.restockThreshold),
         },
       });
-      console.log("addIngredient succeeded");
       setIngredientForm({
         name: "",
         unitPrice: "",
@@ -386,79 +416,48 @@ function App() {
 
   const handleCreateRecipe = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Submitting createRecipe:", recipeForm);
-    if (
-      recipeForm.name &&
-      recipeForm.ingredients.every((ing) => ing.id && ing.quantity)
-    ) {
-      setIsSubmitting({ ...isSubmitting, recipe: true });
-      try {
-        await createRecipe({
-          variables: {
-            name: recipeForm.name,
-            ingredientIds: recipeForm.ingredients.map((ing) => ing.id),
-            quantities: recipeForm.ingredients.map((ing) =>
-              parseFloat(ing.quantity)
-            ),
-            targetMargin: parseFloat(recipeForm.targetMargin) / 100,
-          },
-        });
-        console.log("createRecipe succeeded");
-        setRecipeForm({
-          name: "",
-          targetMargin: "30",
-          ingredients: [{ id: "", quantity: "" }],
-        });
-      } catch (err: any) {
-        console.error("createRecipe failed:", err);
-      } finally {
-        setIsSubmitting({ ...isSubmitting, recipe: false });
-      }
-    } else {
-      console.warn("createRecipe form invalid:", recipeForm);
+    if (!validateRecipeForm()) return;
+
+    setIsSubmitting({ ...isSubmitting, recipe: true });
+    try {
+      await createRecipe({
+        variables: {
+          name: recipeForm.name,
+          ingredientIds: recipeForm.ingredients.map((ing) => ing.id),
+          quantities: recipeForm.ingredients.map((ing) =>
+            parseFloat(ing.quantity)
+          ),
+          targetMargin: parseFloat(recipeForm.targetMargin) / 100,
+        },
+      });
+      setRecipeForm({
+        name: "",
+        targetMargin: "30",
+        ingredients: [{ id: "", quantity: "" }],
+      });
+    } catch (err: any) {
+      console.error("createRecipe failed:", err);
+    } finally {
+      setIsSubmitting({ ...isSubmitting, recipe: false });
     }
   };
 
   const handleRecordSale = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Submitting recordSale:", saleForm);
-    setSaleFormError("");
-
-    const saleAmount = parseFloat(saleForm.saleAmount);
-    const quantitySold = parseInt(saleForm.quantitySold);
-
-    if (!saleForm.recipeId) {
-      console.warn("recordSale validation failed: Missing recipeId");
-      setSaleFormError("Please select a recipe");
-      return;
-    }
-    if (isNaN(saleAmount) || saleAmount <= 0) {
-      console.warn("recordSale validation failed: Invalid saleAmount");
-      setSaleFormError("Please enter a valid sale amount greater than 0");
-      return;
-    }
-    if (isNaN(quantitySold) || quantitySold <= 0) {
-      console.warn("recordSale validation failed: Invalid quantitySold");
-      setSaleFormError("Please enter a valid quantity greater than 0");
-      return;
-    }
+    if (!validateSaleForm()) return;
 
     setIsSubmitting({ ...isSubmitting, sale: true });
     try {
       await recordSale({
         variables: {
           recipeId: saleForm.recipeId,
-          saleAmount,
-          quantitySold,
+          saleAmount: parseFloat(saleForm.saleAmount),
+          quantitySold: parseInt(saleForm.quantitySold),
         },
       });
-      console.log("recordSale succeeded");
       setSaleForm({ recipeId: "", saleAmount: "", quantitySold: "1" });
     } catch (err: any) {
       console.error("recordSale failed:", err);
-      setSaleFormError(
-        err.message || "Failed to record sale. Please try again."
-      );
     } finally {
       setIsSubmitting({ ...isSubmitting, sale: false });
     }
@@ -471,28 +470,12 @@ function App() {
       )
     )
       return;
-    console.log("Deleting ingredient:", id);
     setDeletingItems((prev) => ({
       ...prev,
       ingredients: new Set(prev.ingredients).add(id),
     }));
     try {
-      await deleteIngredient({
-        variables: { id },
-        update(cache, { data: { deleteIngredient } }) {
-          if (deleteIngredient.success) {
-            cache.modify({
-              fields: {
-                ingredients(existingIngredients = [], { readField }) {
-                  return existingIngredients.filter(
-                    (ingRef: any) => readField("id", ingRef) !== id
-                  );
-                },
-              },
-            });
-          }
-        },
-      });
+      await deleteIngredient({ variables: { id } });
     } catch (err) {
       console.error("deleteIngredient failed:", err);
     } finally {
@@ -511,28 +494,12 @@ function App() {
       )
     )
       return;
-    console.log("Deleting recipe:", id);
     setDeletingItems((prev) => ({
       ...prev,
       recipes: new Set(prev.recipes).add(id),
     }));
     try {
-      await deleteRecipe({
-        variables: { id },
-        update(cache, { data: { deleteRecipe } }) {
-          if (deleteRecipe.success) {
-            cache.modify({
-              fields: {
-                recipes(existingRecipes = [], { readField }) {
-                  return existingRecipes.filter(
-                    (recRef: any) => readField("id", recRef) !== id
-                  );
-                },
-              },
-            });
-          }
-        },
-      });
+      await deleteRecipe({ variables: { id } });
     } catch (err) {
       console.error("deleteRecipe failed:", err);
     } finally {
@@ -547,28 +514,12 @@ function App() {
   const handleDeleteSale = async (id: string, recipeName: string) => {
     if (!confirm(`Are you sure you want to delete sale of "${recipeName}"?`))
       return;
-    console.log("Deleting sale:", id);
     setDeletingItems((prev) => ({
       ...prev,
       sales: new Set(prev.sales).add(id),
     }));
     try {
-      await deleteSale({
-        variables: { id },
-        update(cache, { data: { deleteSale } }) {
-          if (deleteSale.success) {
-            cache.modify({
-              fields: {
-                sales(existingSales = [], { readField }) {
-                  return existingSales.filter(
-                    (saleRef: any) => readField("id", saleRef) !== id
-                  );
-                },
-              },
-            });
-          }
-        },
-      });
+      await deleteSale({ variables: { id } });
     } catch (err) {
       console.error("deleteSale failed:", err);
     } finally {
@@ -581,7 +532,6 @@ function App() {
   };
 
   const addIngredientToRecipe = () => {
-    console.log("Adding ingredient to recipe form");
     setRecipeForm({
       ...recipeForm,
       ingredients: [...recipeForm.ingredients, { id: "", quantity: "" }],
@@ -593,17 +543,14 @@ function App() {
     field: "id" | "quantity",
     value: string
   ) => {
-    console.log("Updating recipe ingredient:", { index, field, value });
     const newIngredients = [...recipeForm.ingredients];
     newIngredients[index] = { ...newIngredients[index], [field]: value };
     setRecipeForm({ ...recipeForm, ingredients: newIngredients });
   };
 
-  console.log("Rendering tab content for:", activeTab);
   const renderTabContent = () => {
     switch (activeTab) {
       case "dashboard":
-        console.log("Rendering dashboard tab");
         return (
           <div className="card">
             <h2 className="card-title">Dashboard</h2>
@@ -640,17 +587,49 @@ function App() {
               {(data?.dashboardStats?.lowStockIngredients ?? []).map(
                 (ingredient: any) => (
                   <li key={ingredient.id} className="list-item alert">
-                    {ingredient.name ?? "Unknown"}:{" "}
-                    {ingredient.stockQuantity ?? 0} {ingredient.unit ?? ""}{" "}
-                    (Threshold: {ingredient.restockThreshold ?? 0})
+                    <div className="list-item-content">
+                      <div>
+                        <p className="list-item-title">
+                          {ingredient.name ?? "Unknown"}
+                        </p>
+                        <p className="list-item-description">
+                          {ingredient.stockQuantity ?? 0}{" "}
+                          {ingredient.unit ?? ""} (Threshold:{" "}
+                          {ingredient.restockThreshold ?? 0})
+                        </p>
+                      </div>
+                    </div>
                   </li>
                 )
               )}
             </ul>
+            <div className="guide">
+              <h3 className="section-title">Usage Guide</h3>
+              <p>
+                The Dashboard provides an overview of your business performance:
+              </p>
+              <ul className="guide-list">
+                <li>
+                  <strong>Total Sales</strong>: Total revenue from all recorded
+                  sales.
+                </li>
+                <li>
+                  <strong>Total Costs</strong>: Sum of costs for all ingredients
+                  used in recipes.
+                </li>
+                <li>
+                  <strong>Total Margin</strong>: Profit calculated as sales
+                  minus costs.
+                </li>
+                <li>
+                  <strong>Low Stock Alerts</strong>: Lists ingredients below
+                  their restock threshold.
+                </li>
+              </ul>
+            </div>
           </div>
         );
       case "ingredients":
-        console.log("Rendering ingredients tab");
         return (
           <div className="card">
             <h2 className="card-title">Ingredients</h2>
@@ -679,6 +658,9 @@ function App() {
                   className="input"
                   required
                 />
+                {formErrors.ingredient.name && (
+                  <p className="error">{formErrors.ingredient.name}</p>
+                )}
               </div>
               <div className="form-group">
                 <label htmlFor="unit-price">Unit Price (£)</label>
@@ -699,6 +681,9 @@ function App() {
                   className="input"
                   required
                 />
+                {formErrors.ingredient.unitPrice && (
+                  <p className="error">{formErrors.ingredient.unitPrice}</p>
+                )}
               </div>
               <div className="form-group">
                 <label htmlFor="unit">Unit</label>
@@ -718,6 +703,9 @@ function App() {
                   className="input"
                   required
                 />
+                {formErrors.ingredient.unit && (
+                  <p className="error">{formErrors.ingredient.unit}</p>
+                )}
               </div>
               <div className="form-group">
                 <label htmlFor="stock-quantity">Stock Quantity</label>
@@ -738,6 +726,9 @@ function App() {
                   className="input"
                   required
                 />
+                {formErrors.ingredient.stockQuantity && (
+                  <p className="error">{formErrors.ingredient.stockQuantity}</p>
+                )}
               </div>
               <div className="form-group">
                 <label htmlFor="restock-threshold">Restock Threshold</label>
@@ -758,6 +749,11 @@ function App() {
                   className="input"
                   required
                 />
+                {formErrors.ingredient.restockThreshold && (
+                  <p className="error">
+                    {formErrors.ingredient.restockThreshold}
+                  </p>
+                )}
               </div>
               <button
                 type="submit"
@@ -771,13 +767,19 @@ function App() {
               {(data?.ingredients ?? []).map((ingredient: any) => (
                 <li key={ingredient.id} className="list-item">
                   <div className="list-item-content">
-                    {ingredient.name ?? "Unknown"}: £
-                    {(ingredient.unitPrice ?? 0).toFixed(2)}/
-                    {ingredient.unit ?? ""}, Stock:{" "}
-                    {ingredient.stockQuantity ?? 0} (Threshold:{" "}
-                    {ingredient.restockThreshold ?? 0})
+                    <div>
+                      <p className="list-item-title">
+                        {ingredient.name ?? "Unknown"}
+                      </p>
+                      <p className="list-item-description">
+                        £{(ingredient.unitPrice ?? 0).toFixed(2)}/
+                        {ingredient.unit ?? ""}, Stock:{" "}
+                        {ingredient.stockQuantity ?? 0} (Threshold:{" "}
+                        {ingredient.restockThreshold ?? 0})
+                      </p>
+                    </div>
                     <button
-                      className="button delete"
+                      className="delete-button"
                       onClick={() =>
                         handleDeleteIngredient(ingredient.id, ingredient.name)
                       }
@@ -787,18 +789,42 @@ function App() {
                       }
                     >
                       {deletingItems.ingredients.has(ingredient.id) ||
-                      deleteIngredientLoading
-                        ? "Deleting..."
-                        : "Delete"}
+                      deleteIngredientLoading ? (
+                        "Deleting..."
+                      ) : (
+                        <FaTrash className="delete-icon" />
+                      )}
                     </button>
                   </div>
                 </li>
               ))}
             </ul>
+            <div className="guide">
+              <h3 className="section-title">Usage Guide</h3>
+              <p>Manage your ingredients effectively:</p>
+              <ul className="guide-list">
+                <li>
+                  <strong>Add Ingredient</strong>: Fill in all fields with valid
+                  data (name, price, unit, quantity, threshold).
+                </li>
+                <li>
+                  <strong>Validation</strong>: Names must be ≤50 characters,
+                  prices and quantities must be positive, units must be letters
+                  only.
+                </li>
+                <li>
+                  <strong>Delete Ingredient</strong>: Click the trash icon to
+                  remove an ingredient (will affect recipes).
+                </li>
+                <li>
+                  <strong>Automatic Updates</strong>: List refreshes
+                  automatically after adding/deleting.
+                </li>
+              </ul>
+            </div>
           </div>
         );
       case "recipes":
-        console.log("Rendering recipes tab");
         return (
           <div className="card">
             <h2 className="card-title">Create Recipe</h2>
@@ -824,6 +850,9 @@ function App() {
                   className="input"
                   required
                 />
+                {formErrors.recipe.name && (
+                  <p className="error">{formErrors.recipe.name}</p>
+                )}
               </div>
               <div className="form-group">
                 <label htmlFor="target-margin">Target Margin (%)</label>
@@ -843,6 +872,9 @@ function App() {
                   step="1"
                   className="input"
                 />
+                {formErrors.recipe.targetMargin && (
+                  <p className="error">{formErrors.recipe.targetMargin}</p>
+                )}
               </div>
               {recipeForm.ingredients.map((ing, index) => (
                 <div key={index} className="ingredient-row">
@@ -895,6 +927,9 @@ function App() {
                   </div>
                 </div>
               ))}
+              {formErrors.recipe.ingredients && (
+                <p className="error">{formErrors.recipe.ingredients}</p>
+              )}
               <button
                 type="button"
                 className="button secondary"
@@ -914,11 +949,26 @@ function App() {
               {(data?.recipes ?? []).map((recipe: any) => (
                 <li key={recipe.id} className="list-item">
                   <div className="list-item-content">
-                    {recipe.name ?? "Unknown"}: £
-                    {(recipe.totalCost ?? 0).toFixed(2)} (Suggested Price: £
-                    {(recipe.suggestedPrice ?? 0).toFixed(2)})
+                    <div>
+                      <p className="list-item-title">
+                        {recipe.name ?? "Unknown"}
+                      </p>
+                      <p className="list-item-description">
+                        £{(recipe.totalCost ?? 0).toFixed(2)} (Suggested Price:
+                        £{(recipe.suggestedPrice ?? 0).toFixed(2)})
+                      </p>
+                      <ul className="nested-list">
+                        {(recipe.ingredients ?? []).map((ri: any) => (
+                          <li key={ri.id} className="nested-list-item">
+                            {ri.ingredient?.name ?? "Unknown"}:{" "}
+                            {ri.quantity ?? 0} {ri.ingredient?.unit ?? ""} (£
+                            {(ri.ingredient?.unitPrice ?? 0).toFixed(2)}/unit)
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                     <button
-                      className="button delete"
+                      className="delete-button"
                       onClick={() => handleDeleteRecipe(recipe.id, recipe.name)}
                       disabled={
                         deletingItems.recipes.has(recipe.id) ||
@@ -926,38 +976,50 @@ function App() {
                       }
                     >
                       {deletingItems.recipes.has(recipe.id) ||
-                      deleteRecipeLoading
-                        ? "Deleting..."
-                        : "Delete"}
+                      deleteRecipeLoading ? (
+                        "Deleting..."
+                      ) : (
+                        <FaTrash className="delete-icon" />
+                      )}
                     </button>
-                    <ul className="nested-list">
-                      {(recipe.ingredients ?? []).map((ri: any) => (
-                        <li key={ri.id} className="nested-list-item">
-                          {ri.ingredient?.name ?? "Unknown"}: {ri.quantity ?? 0}{" "}
-                          {ri.ingredient?.unit ?? ""} (£
-                          {(ri.ingredient?.unitPrice ?? 0).toFixed(2)}/unit)
-                        </li>
-                      ))}
-                    </ul>
                   </div>
                 </li>
               ))}
             </ul>
+            <div className="guide">
+              <h3 className="section-title">Usage Guide</h3>
+              <p>Create and manage recipes:</p>
+              <ul className="guide-list">
+                <li>
+                  <strong>Add Recipe</strong>: Enter a name and select
+                  ingredients with quantities.
+                </li>
+                <li>
+                  <strong>Validation</strong>: Names must be ≤50 characters,
+                  quantities must be positive, all ingredients must be selected.
+                </li>
+                <li>
+                  <strong>Delete Recipe</strong>: Click the trash icon to remove
+                  a recipe (affects sales).
+                </li>
+                <li>
+                  <strong>Automatic Updates</strong>: List refreshes
+                  automatically after adding/deleting.
+                </li>
+              </ul>
+            </div>
           </div>
         );
       case "sales":
-        console.log("Rendering sales tab");
         return (
           <div className="card">
             <h2 className="card-title">Record Sale</h2>
-            {error && <p className="error">{error}</p>}
             {recordSaleError && (
               <p className="error">Error: {recordSaleError.message}</p>
             )}
             {deleteSaleError && (
               <p className="error">Error: {deleteSaleError.message}</p>
             )}
-            {saleFormError && <p className="error">{saleFormError}</p>}
             <form onSubmit={handleRecordSale} className="form">
               <div className="form-group">
                 <label htmlFor="recipe-select">Recipe</label>
@@ -983,6 +1045,9 @@ function App() {
                     </option>
                   ))}
                 </select>
+                {formErrors.sale.recipeId && (
+                  <p className="error">{formErrors.sale.recipeId}</p>
+                )}
               </div>
               <div className="form-group">
                 <label htmlFor="sale-amount">Sale Amount (£)</label>
@@ -1000,6 +1065,9 @@ function App() {
                   className="input"
                   required
                 />
+                {formErrors.sale.saleAmount && (
+                  <p className="error">{formErrors.sale.saleAmount}</p>
+                )}
               </div>
               <div className="form-group">
                 <label htmlFor="quantity-sold">Quantity Sold</label>
@@ -1017,6 +1085,9 @@ function App() {
                   className="input"
                   required
                 />
+                {formErrors.sale.quantitySold && (
+                  <p className="error">{formErrors.sale.quantitySold}</p>
+                )}
               </div>
               <button
                 type="submit"
@@ -1030,14 +1101,20 @@ function App() {
               {(data?.sales ?? []).map((sale: any) => (
                 <li key={sale.id} className="list-item">
                   <div className="list-item-content">
-                    Sale of {sale.recipe?.name ?? "Unknown"}: £
-                    {(sale.saleAmount ?? 0).toFixed(2)} (Created:{" "}
-                    {sale.createdAt
-                      ? new Date(sale.createdAt).toLocaleDateString()
-                      : "N/A"}
-                    )
+                    <div>
+                      <p className="list-item-title">
+                        Sale of {sale.recipe?.name ?? "Unknown"}
+                      </p>
+                      <p className="list-item-description">
+                        £{(sale.saleAmount ?? 0).toFixed(2)} (Created:{" "}
+                        {sale.createdAt
+                          ? new Date(sale.createdAt).toLocaleDateString()
+                          : "N/A"}
+                        )
+                      </p>
+                    </div>
                     <button
-                      className="button delete"
+                      className="delete-button"
                       onClick={() =>
                         handleDeleteSale(sale.id, sale.recipe?.name)
                       }
@@ -1045,18 +1122,41 @@ function App() {
                         deletingItems.sales.has(sale.id) || deleteSaleLoading
                       }
                     >
-                      {deletingItems.sales.has(sale.id) || deleteSaleLoading
-                        ? "Deleting..."
-                        : "Delete"}
+                      {deletingItems.sales.has(sale.id) || deleteSaleLoading ? (
+                        "Deleting..."
+                      ) : (
+                        <FaTrash className="delete-icon" />
+                      )}
                     </button>
                   </div>
                 </li>
               ))}
             </ul>
+            <div className="guide">
+              <h3 className="section-title">Usage Guide</h3>
+              <p>Record and track sales:</p>
+              <ul className="guide-list">
+                <li>
+                  <strong>Record Sale</strong>: Select a recipe and enter sale
+                  amount and quantity.
+                </li>
+                <li>
+                  <strong>Validation</strong>: Sale amount and quantity must be
+                  positive numbers.
+                </li>
+                <li>
+                  <strong>Delete Sale</strong>: Click the trash icon to remove a
+                  sale.
+                </li>
+                <li>
+                  <strong>Automatic Updates</strong>: List refreshes
+                  automatically after adding/deleting.
+                </li>
+              </ul>
+            </div>
           </div>
         );
       default:
-        console.warn("Unknown tab:", activeTab);
         return null;
     }
   };
@@ -1091,6 +1191,9 @@ function App() {
         </button>
       </div>
       <div className="tab-content">{renderTabContent()}</div>
+      <footer className="footer">
+        <p>© 2025 Carl Serquina. All rights reserved.</p>
+      </footer>
     </div>
   );
 }
