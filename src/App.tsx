@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQuery, useMutation, gql } from "@apollo/client";
 import { useState, useEffect, useRef } from "react";
@@ -321,21 +320,9 @@ function App() {
     message: "",
     type: "success",
   });
-  const [pendingAction, setPendingAction] = useState<{
-    type:
-      | "create-ingredient"
-      | "create-recipe"
-      | "record-sale"
-      | "delete-ingredient"
-      | "delete-recipe"
-      | "delete-sale"
-      | null;
-    data?: any;
-  }>({ type: null });
 
   const closeModal = () => {
     setModal({ ...modal, isOpen: false });
-    setPendingAction({ type: null });
   };
 
   useEffect(() => {
@@ -566,7 +553,6 @@ function App() {
       });
     } finally {
       setIsSubmitting({ ...isSubmitting, ingredient: false });
-      setPendingAction({ type: null });
     }
   };
 
@@ -624,7 +610,6 @@ function App() {
       });
     } finally {
       setIsSubmitting({ ...isSubmitting, recipe: false });
-      setPendingAction({ type: null });
     }
   };
 
@@ -673,7 +658,6 @@ function App() {
       });
     } finally {
       setIsSubmitting({ ...isSubmitting, sale: false });
-      setPendingAction({ type: null });
     }
   };
 
@@ -721,7 +705,6 @@ function App() {
         newSet.delete(id);
         return { ...prev, ingredients: newSet };
       });
-      setPendingAction({ type: null });
     }
   };
 
@@ -769,7 +752,6 @@ function App() {
         newSet.delete(id);
         return { ...prev, recipes: newSet };
       });
-      setPendingAction({ type: null });
     }
   };
 
@@ -817,7 +799,6 @@ function App() {
         newSet.delete(id);
         return { ...prev, sales: newSet };
       });
-      setPendingAction({ type: null });
     }
   };
 
@@ -825,7 +806,6 @@ function App() {
     e.preventDefault();
     if (!validateIngredientForm()) return;
 
-    setPendingAction({ type: "create-ingredient" });
     setModal({
       isOpen: true,
       title: "Confirm Add Ingredient",
@@ -839,7 +819,6 @@ function App() {
     e.preventDefault();
     if (!validateRecipeForm()) return;
 
-    setPendingAction({ type: "create-recipe" });
     setModal({
       isOpen: true,
       title: "Confirm Create Recipe",
@@ -856,7 +835,7 @@ function App() {
     const recipeName =
       data?.recipes?.find((r: any) => r.id === saleForm.recipeId)?.name ||
       "Unknown";
-    setPendingAction({ type: "record-sale" });
+
     setModal({
       isOpen: true,
       title: "Confirm Record Sale",
@@ -867,7 +846,6 @@ function App() {
   };
 
   const confirmDeleteIngredient = (id: string, name: string) => {
-    setPendingAction({ type: "delete-ingredient", data: { id, name } });
     setModal({
       isOpen: true,
       title: "Confirm Delete Ingredient",
@@ -878,7 +856,6 @@ function App() {
   };
 
   const confirmDeleteRecipe = (id: string, name: string) => {
-    setPendingAction({ type: "delete-recipe", data: { id, name } });
     setModal({
       isOpen: true,
       title: "Confirm Delete Recipe",
@@ -889,7 +866,6 @@ function App() {
   };
 
   const confirmDeleteSale = (id: string, recipeName: string) => {
-    setPendingAction({ type: "delete-sale", data: { id, recipeName } });
     setModal({
       isOpen: true,
       title: "Confirm Delete Sale",
