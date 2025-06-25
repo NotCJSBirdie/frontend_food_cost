@@ -107,6 +107,7 @@ h4 {
   list-style: none;
   padding: 0;
   margin: 24px 0 0 0;
+  width: 100%; /* Match form width */
 }
 
 .list-item {
@@ -114,6 +115,8 @@ h4 {
   background-color: #f7f1e3;
   border-radius: 8px;
   margin-bottom: 12px;
+  width: 100%; /* Ensure list items take full width */
+  box-sizing: border-box; /* Consistent sizing */
 }
 
 .list-item.alert {
@@ -145,12 +148,14 @@ h4 {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  width: 100%; /* Ensure form takes full card width */
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%; /* Full width for consistency */
 }
 
 .form-group label {
@@ -174,6 +179,7 @@ select {
   font-size: 1rem;
   background-color: #ffffff;
   color: #271206;
+  box-sizing: border-box; /* Ensure padding doesn't affect width */
 }
 
 .input:focus,
@@ -187,6 +193,7 @@ select:focus {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+  justify-content: flex-start; /* Align buttons consistently */
 }
 
 .button {
@@ -270,6 +277,7 @@ select:focus {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  width: 100%; /* Ensure full width */
 }
 
 .guide {
@@ -429,6 +437,7 @@ select:focus {
   }
 }
 
+/* Responsive adjustments */
 @media (min-width: 768px) {
   .container {
     padding: 32px;
@@ -442,10 +451,17 @@ select:focus {
   .ingredient-row {
     flex-direction: row;
     align-items: flex-start;
+    gap: 16px; /* Tighter gap for desktop */
   }
 
   .form-group {
-    flex: 1;
+    flex: 1; /* Equal width for form groups in ingredient-row */
+    min-width: 0; /* Prevent overflow */
+  }
+
+  .input,
+  select {
+    width: 100%; /* Ensure inputs scale correctly */
   }
 }
 
@@ -465,6 +481,19 @@ select:focus {
 
   .stats-grid {
     grid-template-columns: 1fr;
+  }
+
+  .form-group {
+    width: 100%; /* Full width on mobile */
+  }
+
+  .ingredient-row {
+    flex-direction: column; /* Stack vertically on mobile */
+    gap: 24px;
+  }
+
+  .list-item {
+    padding: 12px; /* Slightly smaller padding for mobile */
   }
 }
 
