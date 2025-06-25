@@ -11,7 +11,6 @@ import {
 import { onError } from "@apollo/client/link/error";
 import App from "./App";
 import "./index.css";
-import { Analytics } from "@vercel/analytics/next";
 
 // Log environment variables at startup
 console.log("Environment variables:", {
@@ -97,7 +96,6 @@ console.log("Apollo Client initialized:", {
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <ApolloProvider client={client}>
     <React.StrictMode>
-      <Analytics />
       <App />
     </React.StrictMode>
   </ApolloProvider>
