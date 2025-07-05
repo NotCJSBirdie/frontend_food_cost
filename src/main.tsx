@@ -100,3 +100,5 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     </React.StrictMode>
   </ApolloProvider>
 );
+
+// check your api keys it might expire on AWS AppSync console :)
