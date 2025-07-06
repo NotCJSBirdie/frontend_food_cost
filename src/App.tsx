@@ -37,6 +37,7 @@ import type {
   Sale,
   DashboardStats,
 } from "./types";
+import { useApolloClient } from "@apollo/client";
 
 // Type definitions for the component state
 interface SubmittingState {
@@ -60,6 +61,7 @@ interface QueryData {
 }
 
 function App() {
+  const client = useApolloClient();
   const { loading, error, data, refetch } = useQuery<QueryData>(GET_DATA);
   const [
     addIngredient,
@@ -100,6 +102,12 @@ function App() {
   const [modal, setModal] = useState<ModalState>(initialModal);
 
   const closeModal = (): void => setModal({ ...modal, isOpen: false });
+
+  useEffect(() => {
+    client.clearStore().catch((error) => {
+      console.warn("Cache clearing failed:", error);
+    });
+  }, []);
 
   useEffect(() => {
     if (addIngredientError)
