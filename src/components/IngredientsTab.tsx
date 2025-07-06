@@ -49,7 +49,7 @@ const IngredientsTab: React.FC<IngredientsTabProps> = ({
     totalItems,
   } = usePagination({
     data: ingredients,
-    itemsPerPage: 10, // Show 10 items per page
+    itemsPerPage: 10,
   });
 
   return (
