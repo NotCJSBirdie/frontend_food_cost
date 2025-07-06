@@ -231,12 +231,15 @@ function App() {
         parseFloat(ing.quantity)
       );
 
+      // Convert percentage from 0-100 to 0-1 for backend
+      const targetMarginDecimal = parseFloat(recipeForm.targetMargin) / 100;
+
       const result = await createRecipe({
         variables: {
           name: recipeForm.name,
           ingredientIds: ingredientIds,
           quantities: quantities,
-          targetMargin: parseFloat(recipeForm.targetMargin),
+          targetMargin: targetMarginDecimal, // Send decimal value to backend
         },
       });
 

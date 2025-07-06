@@ -1,4 +1,4 @@
-import type { FormData, FormErrors } from "../types/index";
+import type { FormData, FormErrors } from "../types";
 
 export function validateIngredientForm(
   ingredientForm: FormData["ingredient"],
@@ -63,6 +63,7 @@ export function validateRecipeForm(
     isValid = false;
   }
 
+  // Updated validation: Allow 0-100 range since we'll convert to 0-1 for backend
   if (
     !recipeForm.targetMargin ||
     parseFloat(recipeForm.targetMargin) < 0 ||
