@@ -259,9 +259,8 @@ const IngredientsTab: React.FC<IngredientsTabProps> = ({
               <p className="list-item-description">
                 Price: £{(ingredient.unitPrice ?? 0).toFixed(2)} per{" "}
                 {ingredient.unit ?? "unit"} | Stock:{" "}
-                {ingredient.stockQuantity ?? 0} {ingredient.unit ?? ""} |
-                Threshold: {ingredient.restockThreshold ?? 0}{" "}
-                {ingredient.unit ?? ""}
+                {ingredient.stockQuantity ?? 0} | Threshold:{" "}
+                {ingredient.restockThreshold ?? 0}
               </p>
             </div>
             <button

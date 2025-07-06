@@ -44,7 +44,6 @@ const SalesTab: React.FC<SalesTabProps> = ({
     >
       <div className="form-group">
         <label htmlFor="sale-recipe">Recipe</label>
-        // Update the recipe selection dropdown:
         <select
           id="sale-recipe"
           value={saleForm.recipeId}
