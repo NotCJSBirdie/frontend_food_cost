@@ -206,8 +206,8 @@ const RecipesTab: React.FC<RecipesTabProps> = ({
             <div>
               <p className="list-item-title">{recipe.name ?? "Unknown"}</p>
               <p className="list-item-description">
-                Cost: £{(recipe.cost ?? 0).toFixed(2)} | Target Margin:{" "}
-                {recipe.targetMargin ?? 0}%
+                Recipe created with {recipe.ingredients?.length ?? 0}{" "}
+                ingredients
               </p>
             </div>
             <button

@@ -13,8 +13,6 @@ export const GET_DATA = gql`
     recipes {
       id
       name
-      cost
-      targetMargin
       ingredients {
         id
         ingredient {
@@ -31,11 +29,8 @@ export const GET_DATA = gql`
       recipe {
         id
         name
-        cost
       }
       saleAmount
-      quantitySold
-      profit
       createdAt
     }
     dashboardStats {
@@ -91,8 +86,7 @@ export const CREATE_RECIPE = gql`
     ) {
       id
       name
-      cost
-      targetMargin
+      # Only include fields that exist in your backend
       ingredients {
         id
         ingredient {
@@ -122,11 +116,9 @@ export const RECORD_SALE = gql`
       recipe {
         id
         name
-        cost
       }
       saleAmount
-      quantitySold
-      profit
+      # Only include fields that exist in your backend
       createdAt
     }
   }

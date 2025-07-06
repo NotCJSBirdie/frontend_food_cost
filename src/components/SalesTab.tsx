@@ -65,7 +65,7 @@ const SalesTab: React.FC<SalesTabProps> = ({
           <option value="">Select recipe</option>
           {(data?.recipes ?? []).map((recipe: any) => (
             <option key={recipe.id} value={recipe.id}>
-              {recipe.name} (Cost: £{(recipe.cost ?? 0).toFixed(2)})
+              {recipe.name}
             </option>
           ))}
         </select>
@@ -178,9 +178,8 @@ const SalesTab: React.FC<SalesTabProps> = ({
                 {sale.recipe?.name ?? "Unknown Recipe"}
               </p>
               <p className="list-item-description">
-                Amount: £{(sale.saleAmount ?? 0).toFixed(2)} | Quantity:{" "}
-                {sale.quantitySold ?? 0} | Profit: £
-                {(sale.profit ?? 0).toFixed(2)}
+                Sale Amount: £{(sale.saleAmount ?? 0).toFixed(2)} | Date:{" "}
+                {new Date(sale.createdAt).toLocaleDateString()}
               </p>
             </div>
             <button
