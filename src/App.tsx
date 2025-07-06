@@ -169,7 +169,7 @@ function App() {
     }
 
     try {
-      await addIngredient({
+      const result = await addIngredient({
         variables: {
           name: ingredientForm.name,
           unitPrice: parseFloat(ingredientForm.unitPrice),
@@ -178,17 +178,36 @@ function App() {
           restockThreshold: parseFloat(ingredientForm.restockThreshold),
         },
       });
-      setModal({
-        isOpen: true,
-        title: "Success",
-        message: "Ingredient added successfully!",
-        type: "success",
-        onConfirm: undefined,
-      });
-      resetIngredientForm();
-      refetch();
+
+      if (result.data?.addIngredient?.success) {
+        setModal({
+          isOpen: true,
+          title: "Success",
+          message: "Ingredient added successfully!",
+          type: "success",
+          onConfirm: undefined,
+        });
+        resetIngredientForm();
+        refetch();
+      } else {
+        setModal({
+          isOpen: true,
+          title: "Error",
+          message:
+            result.data?.addIngredient?.error || "Failed to add ingredient",
+          type: "error",
+          onConfirm: undefined,
+        });
+      }
     } catch (error) {
       console.error("Error adding ingredient:", error);
+      setModal({
+        isOpen: true,
+        title: "Error",
+        message: "An unexpected error occurred",
+        type: "error",
+        onConfirm: undefined,
+      });
     } finally {
       setIsSubmitting({ ...isSubmitting, ingredient: false });
     }
@@ -204,29 +223,52 @@ function App() {
     }
 
     try {
-      await createRecipe({
+      const validIngredients = recipeForm.ingredients.filter(
+        (ing) => ing.id && ing.quantity
+      );
+      const ingredientIds = validIngredients.map((ing) => ing.id);
+      const quantities = validIngredients.map((ing) =>
+        parseFloat(ing.quantity)
+      );
+
+      const result = await createRecipe({
         variables: {
           name: recipeForm.name,
+          ingredientIds: ingredientIds,
+          quantities: quantities,
           targetMargin: parseFloat(recipeForm.targetMargin),
-          ingredients: recipeForm.ingredients
-            .filter((ing) => ing.id && ing.quantity)
-            .map((ing) => ({
-              ingredientId: ing.id,
-              quantity: parseFloat(ing.quantity),
-            })),
         },
       });
-      setModal({
-        isOpen: true,
-        title: "Success",
-        message: "Recipe created successfully!",
-        type: "success",
-        onConfirm: undefined,
-      });
-      resetRecipeForm();
-      refetch();
+
+      if (result.data?.createRecipe?.success) {
+        setModal({
+          isOpen: true,
+          title: "Success",
+          message: "Recipe created successfully!",
+          type: "success",
+          onConfirm: undefined,
+        });
+        resetRecipeForm();
+        refetch();
+      } else {
+        setModal({
+          isOpen: true,
+          title: "Error",
+          message:
+            result.data?.createRecipe?.error || "Failed to create recipe",
+          type: "error",
+          onConfirm: undefined,
+        });
+      }
     } catch (error) {
       console.error("Error creating recipe:", error);
+      setModal({
+        isOpen: true,
+        title: "Error",
+        message: "An unexpected error occurred",
+        type: "error",
+        onConfirm: undefined,
+      });
     } finally {
       setIsSubmitting({ ...isSubmitting, recipe: false });
     }
@@ -242,24 +284,42 @@ function App() {
     }
 
     try {
-      await recordSale({
+      const result = await recordSale({
         variables: {
           recipeId: saleForm.recipeId,
           saleAmount: parseFloat(saleForm.saleAmount),
           quantitySold: parseInt(saleForm.quantitySold),
         },
       });
-      setModal({
-        isOpen: true,
-        title: "Success",
-        message: "Sale recorded successfully!",
-        type: "success",
-        onConfirm: undefined,
-      });
-      resetSaleForm();
-      refetch();
+
+      if (result.data?.recordSale?.success) {
+        setModal({
+          isOpen: true,
+          title: "Success",
+          message: "Sale recorded successfully!",
+          type: "success",
+          onConfirm: undefined,
+        });
+        resetSaleForm();
+        refetch();
+      } else {
+        setModal({
+          isOpen: true,
+          title: "Error",
+          message: result.data?.recordSale?.error || "Failed to record sale",
+          type: "error",
+          onConfirm: undefined,
+        });
+      }
     } catch (error) {
       console.error("Error recording sale:", error);
+      setModal({
+        isOpen: true,
+        title: "Error",
+        message: "An unexpected error occurred",
+        type: "error",
+        onConfirm: undefined,
+      });
     } finally {
       setIsSubmitting({ ...isSubmitting, sale: false });
     }
@@ -353,17 +413,37 @@ function App() {
     }));
 
     try {
-      await deleteIngredient({ variables: { id } });
-      setModal({
-        isOpen: true,
-        title: "Success",
-        message: "Ingredient deleted successfully!",
-        type: "success",
-        onConfirm: undefined,
-      });
-      refetch();
+      const result = await deleteIngredient({ variables: { id } });
+
+      if (result.data?.deleteIngredient?.success) {
+        setModal({
+          isOpen: true,
+          title: "Success",
+          message: "Ingredient deleted successfully!",
+          type: "success",
+          onConfirm: undefined,
+        });
+        refetch();
+      } else {
+        setModal({
+          isOpen: true,
+          title: "Error",
+          message:
+            result.data?.deleteIngredient?.error ||
+            "Failed to delete ingredient",
+          type: "error",
+          onConfirm: undefined,
+        });
+      }
     } catch (error) {
       console.error("Error deleting ingredient:", error);
+      setModal({
+        isOpen: true,
+        title: "Error",
+        message: "An unexpected error occurred",
+        type: "error",
+        onConfirm: undefined,
+      });
     } finally {
       setDeletingItems((prev) => {
         const newSet = new Set(prev.ingredients);
@@ -380,17 +460,36 @@ function App() {
     }));
 
     try {
-      await deleteRecipe({ variables: { id } });
-      setModal({
-        isOpen: true,
-        title: "Success",
-        message: "Recipe deleted successfully!",
-        type: "success",
-        onConfirm: undefined,
-      });
-      refetch();
+      const result = await deleteRecipe({ variables: { id } });
+
+      if (result.data?.deleteRecipe?.success) {
+        setModal({
+          isOpen: true,
+          title: "Success",
+          message: "Recipe deleted successfully!",
+          type: "success",
+          onConfirm: undefined,
+        });
+        refetch();
+      } else {
+        setModal({
+          isOpen: true,
+          title: "Error",
+          message:
+            result.data?.deleteRecipe?.error || "Failed to delete recipe",
+          type: "error",
+          onConfirm: undefined,
+        });
+      }
     } catch (error) {
       console.error("Error deleting recipe:", error);
+      setModal({
+        isOpen: true,
+        title: "Error",
+        message: "An unexpected error occurred",
+        type: "error",
+        onConfirm: undefined,
+      });
     } finally {
       setDeletingItems((prev) => {
         const newSet = new Set(prev.recipes);
@@ -407,17 +506,35 @@ function App() {
     }));
 
     try {
-      await deleteSale({ variables: { id } });
-      setModal({
-        isOpen: true,
-        title: "Success",
-        message: "Sale deleted successfully!",
-        type: "success",
-        onConfirm: undefined,
-      });
-      refetch();
+      const result = await deleteSale({ variables: { id } });
+
+      if (result.data?.deleteSale?.success) {
+        setModal({
+          isOpen: true,
+          title: "Success",
+          message: "Sale deleted successfully!",
+          type: "success",
+          onConfirm: undefined,
+        });
+        refetch();
+      } else {
+        setModal({
+          isOpen: true,
+          title: "Error",
+          message: result.data?.deleteSale?.error || "Failed to delete sale",
+          type: "error",
+          onConfirm: undefined,
+        });
+      }
     } catch (error) {
       console.error("Error deleting sale:", error);
+      setModal({
+        isOpen: true,
+        title: "Error",
+        message: "An unexpected error occurred",
+        type: "error",
+        onConfirm: undefined,
+      });
     } finally {
       setDeletingItems((prev) => {
         const newSet = new Set(prev.sales);

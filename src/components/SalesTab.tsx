@@ -44,6 +44,7 @@ const SalesTab: React.FC<SalesTabProps> = ({
     >
       <div className="form-group">
         <label htmlFor="sale-recipe">Recipe</label>
+        // Update the recipe selection dropdown:
         <select
           id="sale-recipe"
           value={saleForm.recipeId}
@@ -65,7 +66,7 @@ const SalesTab: React.FC<SalesTabProps> = ({
           <option value="">Select recipe</option>
           {(data?.recipes ?? []).map((recipe: any) => (
             <option key={recipe.id} value={recipe.id}>
-              {recipe.name}
+              {recipe.name} (Cost: £{(recipe.totalCost ?? 0).toFixed(2)})
             </option>
           ))}
         </select>

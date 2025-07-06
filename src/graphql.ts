@@ -13,6 +13,8 @@ export const GET_DATA = gql`
     recipes {
       id
       name
+      totalCost
+      suggestedPrice
       ingredients {
         id
         ingredient {
@@ -29,6 +31,7 @@ export const GET_DATA = gql`
       recipe {
         id
         name
+        totalCost
       }
       saleAmount
       createdAt
@@ -63,12 +66,16 @@ export const ADD_INGREDIENT = gql`
       stockQuantity: $stockQuantity
       restockThreshold: $restockThreshold
     ) {
-      id
-      name
-      unitPrice
-      unit
-      stockQuantity
-      restockThreshold
+      success
+      error
+      ingredient {
+        id
+        name
+        unitPrice
+        unit
+        stockQuantity
+        restockThreshold
+      }
     }
   }
 `;
@@ -76,26 +83,33 @@ export const ADD_INGREDIENT = gql`
 export const CREATE_RECIPE = gql`
   mutation CreateRecipe(
     $name: String!
+    $ingredientIds: [ID!]!
+    $quantities: [Float!]!
     $targetMargin: Float!
-    $ingredients: [RecipeIngredientInput!]!
   ) {
     createRecipe(
       name: $name
+      ingredientIds: $ingredientIds
+      quantities: $quantities
       targetMargin: $targetMargin
-      ingredients: $ingredients
     ) {
-      id
-      name
-      # Only include fields that exist in your backend
-      ingredients {
+      success
+      error
+      recipe {
         id
-        ingredient {
+        name
+        totalCost
+        suggestedPrice
+        ingredients {
           id
-          name
-          unitPrice
-          unit
+          ingredient {
+            id
+            name
+            unitPrice
+            unit
+          }
+          quantity
         }
-        quantity
       }
     }
   }
@@ -112,14 +126,18 @@ export const RECORD_SALE = gql`
       saleAmount: $saleAmount
       quantitySold: $quantitySold
     ) {
-      id
-      recipe {
+      success
+      error
+      sale {
         id
-        name
+        recipe {
+          id
+          name
+          totalCost
+        }
+        saleAmount
+        createdAt
       }
-      saleAmount
-      # Only include fields that exist in your backend
-      createdAt
     }
   }
 `;
@@ -127,7 +145,8 @@ export const RECORD_SALE = gql`
 export const DELETE_INGREDIENT = gql`
   mutation DeleteIngredient($id: ID!) {
     deleteIngredient(id: $id) {
-      id
+      success
+      error
     }
   }
 `;
@@ -135,7 +154,8 @@ export const DELETE_INGREDIENT = gql`
 export const DELETE_RECIPE = gql`
   mutation DeleteRecipe($id: ID!) {
     deleteRecipe(id: $id) {
-      id
+      success
+      error
     }
   }
 `;
@@ -143,7 +163,8 @@ export const DELETE_RECIPE = gql`
 export const DELETE_SALE = gql`
   mutation DeleteSale($id: ID!) {
     deleteSale(id: $id) {
-      id
+      success
+      error
     }
   }
 `;

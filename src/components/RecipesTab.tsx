@@ -206,8 +206,9 @@ const RecipesTab: React.FC<RecipesTabProps> = ({
             <div>
               <p className="list-item-title">{recipe.name ?? "Unknown"}</p>
               <p className="list-item-description">
-                Recipe created with {recipe.ingredients?.length ?? 0}{" "}
-                ingredients
+                Cost: £{(recipe.totalCost ?? 0).toFixed(2)} | Suggested Price: £
+                {(recipe.suggestedPrice ?? 0).toFixed(2)} | Ingredients:{" "}
+                {recipe.ingredients?.length ?? 0}
               </p>
             </div>
             <button
