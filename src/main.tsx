@@ -103,3 +103,4 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 
 // check your api keys it might expire on AWS AppSync console :)
 //new api key
+// cleanup in AWS to only have one FoodCostAPI hehe
