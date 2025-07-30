@@ -81,7 +81,6 @@ const IngredientsTab = ({
             </p>
           )}
         </div>
-
         {/* Unit Price */}
         <div className="form-group">
           <label htmlFor="ingredient-unit-price">Unit Price (£)</label>
@@ -122,7 +121,6 @@ const IngredientsTab = ({
             </p>
           )}
         </div>
-
         {/* Unit */}
         <div className="form-group">
           <label htmlFor="ingredient-unit">Unit</label>
@@ -164,7 +162,6 @@ const IngredientsTab = ({
             </p>
           )}
         </div>
-
         {/* Stock Quantity */}
         <div className="form-group">
           <label htmlFor="ingredient-stock-quantity">Stock Quantity</label>
@@ -205,7 +202,6 @@ const IngredientsTab = ({
             </p>
           )}
         </div>
-
         {/* Restock Threshold */}
         <div className="form-group">
           <label htmlFor="ingredient-restock-threshold">
@@ -275,58 +271,52 @@ const IngredientsTab = ({
 
       <h3 className="section-title">Existing Ingredients</h3>
       {totalItems === 0 ? (
-        <p>No ingredients found.</p>
+        <div className="empty-state">
+          <p>No ingredients found. Add your first ingredient above!</p>
+        </div>
       ) : (
         <>
-          <div className="table-wrapper">
-            <table className="table" aria-label="Ingredients table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Unit</th>
-                  <th>Unit Price (£)</th>
-                  <th>Stock Quantity</th>
-                  <th>Restock Threshold</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedData.map((ingredient) => (
-                  <tr key={ingredient.id}>
-                    <td>{ingredient.name}</td>
-                    <td>{ingredient.unit}</td>
-                    <td>{Number(ingredient.unitPrice).toFixed(2)}</td>
-                    <td>{ingredient.stockQuantity}</td>
-                    <td>{ingredient.restockThreshold}</td>
-                    <td>
-                      <button
-                        type="button"
-                        className="icon-button"
-                        aria-label={`Delete ingredient ${ingredient.name}`}
-                        onClick={() => confirmDeleteIngredient(ingredient.id)}
-                        disabled={
-                          deletingItems.ingredients.has(ingredient.id) ||
-                          deleteIngredientLoading
-                        }
-                      >
-                        {deletingItems.ingredients.has(ingredient.id) ? (
-                          "Deleting..."
-                        ) : (
-                          <FaTrash />
-                        )}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ul className="list">
+            {paginatedData.map((ingredient) => (
+              <li key={ingredient.id} className="list-item">
+                <div className="list-item-content">
+                  <div>
+                    <p className="list-item-title">{ingredient.name}</p>
+                    <p className="list-item-description">
+                      Unit: {ingredient.unit} | Price: £
+                      {Number(ingredient.unitPrice ?? 0).toFixed(2)} | Stock:{" "}
+                      {ingredient.stockQuantity} | Threshold:{" "}
+                      {ingredient.restockThreshold}
+                    </p>
+                  </div>
+                  <button
+                    className="button button-danger"
+                    onClick={() => confirmDeleteIngredient(ingredient.id)}
+                    disabled={
+                      deletingItems.ingredients.has(ingredient.id) ||
+                      deleteIngredientLoading
+                    }
+                    aria-label={`Delete ingredient ${ingredient.name}`}
+                  >
+                    {deletingItems.ingredients.has(ingredient.id) ? (
+                      <div
+                        className="loading-spinner small"
+                        aria-label="Deleting"
+                      ></div>
+                    ) : (
+                      <FaTrash />
+                    )}
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            goToPage={goToPage}
-            goToNextPage={goToNextPage}
-            goToPreviousPage={goToPreviousPage}
+            onPageChange={goToPage}
+            onPreviousPage={goToPreviousPage}
+            onNextPage={goToNextPage}
             isFirstPage={isFirstPage}
             isLastPage={isLastPage}
             startIndex={startIndex}
