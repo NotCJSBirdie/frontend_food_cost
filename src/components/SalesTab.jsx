@@ -191,7 +191,8 @@ const SalesTab = ({
                       {sale.recipe?.name ?? "Unknown Recipe"}
                     </p>
                     <p className="list-item-description">
-                      Sale Amount: £{(sale.saleAmount ?? 0).toFixed(2)} | Date:{" "}
+                      Sale Amount: £{Number(sale.saleAmount ?? 0).toFixed(2)} |
+                      Date:{" "}
                       {sale.createdAt
                         ? new Date(sale.createdAt).toLocaleDateString()
                         : "Unknown"}

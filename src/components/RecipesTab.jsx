@@ -134,10 +134,12 @@ const RecipesTab = ({
                 <option value="">Select ingredient</option>
                 {(data?.ingredients ?? []).map((ing) => (
                   <option key={ing.id} value={ing.id}>
-                    {ing.name} (£{(ing.unitPrice ?? 0).toFixed(2)}/{ing.unit})
+                    {ing.name} (£{Number(ing.unitPrice ?? 0).toFixed(2)}/
+                    {ing.unit})
                   </option>
                 ))}
               </select>
+
               <input
                 type="number"
                 value={ingredient.quantity}
@@ -216,8 +218,9 @@ const RecipesTab = ({
                       {recipe.name ?? "Unknown"}
                     </p>
                     <p className="list-item-description">
-                      Cost: £{(recipe.totalCost ?? 0).toFixed(2)} | Suggested
-                      Price: £{(recipe.suggestedPrice ?? 0).toFixed(2)} |
+                      Cost: £{Number(recipe.totalCost ?? 0).toFixed(2)} |
+                      Suggested Price: £
+                      {Number(recipe.suggestedPrice ?? 0).toFixed(2)} |
                       Ingredients: {recipe.ingredients?.length ?? 0}
                     </p>
                   </div>
