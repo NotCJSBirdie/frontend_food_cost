@@ -7,62 +7,36 @@ const DashboardTab = ({ data }) => (
     </h2>
     <div className="stats-grid">
       <div className="stat">
-        <p>
-          Total Sales: £
-          {(
-            (data && data.dashboardStats && data.dashboardStats.totalSales) ??
-            0
-          ).toFixed(2)}
-        </p>
+        <p>Total Sales: £{(data?.totalSales ?? 0).toFixed(2)}</p>
       </div>
       <div className="stat">
-        <p>
-          Total Costs: £
-          {(
-            (data && data.dashboardStats && data.dashboardStats.totalCosts) ??
-            0
-          ).toFixed(2)}
-        </p>
+        <p>Total Costs: £{(data?.totalCosts ?? 0).toFixed(2)}</p>
       </div>
       <div className="stat">
         <p>
           Total Margin:{" "}
           <span
             className={
-              ((data &&
-                data.dashboardStats &&
-                data.dashboardStats.totalMargin) ??
-                0) >= 0
+              (data?.totalMargin ?? 0) >= 0
                 ? "margin-positive"
                 : "margin-negative"
             }
           >
-            £
-            {(
-              (data &&
-                data.dashboardStats &&
-                data.dashboardStats.totalMargin) ??
-              0
-            ).toFixed(2)}
+            £{(data?.totalMargin ?? 0).toFixed(2)}
           </span>
         </p>
       </div>
     </div>
     <h3 className="section-title">Low Stock Alerts</h3>
     <ul className="list" aria-label="Low stock ingredients">
-      {(
-        (data &&
-          data.dashboardStats &&
-          data.dashboardStats.lowStockIngredients) ??
-        []
-      ).map((ingredient) => (
+      {(data?.lowStockIngredients ?? []).map((ingredient) => (
         <li key={ingredient.id} className="list-item alert">
           <div className="list-item-content">
             <div>
               <p className="list-item-title">{ingredient.name ?? "Unknown"}</p>
               <p className="list-item-description">
-                {ingredient.stockQuantity ?? 0} {ingredient.unit ?? ""}{" "}
-                (Threshold: {ingredient.restockThreshold ?? 0})
+                {Number(ingredient.stockQuantity) ?? 0} {ingredient.unit ?? ""}{" "}
+                (Threshold: {Number(ingredient.restockThreshold) ?? 0})
               </p>
             </div>
           </div>
