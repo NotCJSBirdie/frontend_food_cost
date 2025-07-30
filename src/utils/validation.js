@@ -1,9 +1,4 @@
-import type { FormData, FormErrors } from "../types";
-
-export function validateIngredientForm(
-  ingredientForm: FormData["ingredient"],
-  setFormErrors: React.Dispatch<React.SetStateAction<FormErrors>>
-): boolean {
+export function validateIngredientForm(ingredientForm, setFormErrors) {
   const errors = {
     name: "",
     unitPrice: "",
@@ -45,16 +40,13 @@ export function validateIngredientForm(
   }
 
   if (!isValid) {
-    setFormErrors((prev: FormErrors) => ({ ...prev, ingredient: errors }));
+    setFormErrors((prev) => ({ ...prev, ingredient: errors }));
   }
 
   return isValid;
 }
 
-export function validateRecipeForm(
-  recipeForm: FormData["recipe"],
-  setFormErrors: React.Dispatch<React.SetStateAction<FormErrors>>
-): boolean {
+export function validateRecipeForm(recipeForm, setFormErrors) {
   const errors = { name: "", targetMargin: "", ingredients: "" };
   let isValid = true;
 
@@ -63,7 +55,7 @@ export function validateRecipeForm(
     isValid = false;
   }
 
-  // Updated validation: Allow 0-100 range since we'll convert to 0-1 for backend
+  // Allow 0-100 range since UI converts to 0-1 for backend
   if (
     !recipeForm.targetMargin ||
     parseFloat(recipeForm.targetMargin) < 0 ||
@@ -74,7 +66,7 @@ export function validateRecipeForm(
   }
 
   const validIngredients = recipeForm.ingredients.filter(
-    (ing: { id: string; quantity: string }) => ing.id && ing.quantity
+    (ing) => ing.id && ing.quantity
   );
   if (validIngredients.length === 0) {
     errors.ingredients = "At least one ingredient is required";
@@ -82,16 +74,13 @@ export function validateRecipeForm(
   }
 
   if (!isValid) {
-    setFormErrors((prev: FormErrors) => ({ ...prev, recipe: errors }));
+    setFormErrors((prev) => ({ ...prev, recipe: errors }));
   }
 
   return isValid;
 }
 
-export function validateSaleForm(
-  saleForm: FormData["sale"],
-  setFormErrors: React.Dispatch<React.SetStateAction<FormErrors>>
-): boolean {
+export function validateSaleForm(saleForm, setFormErrors) {
   const errors = { recipeId: "", saleAmount: "", quantitySold: "" };
   let isValid = true;
 
@@ -111,7 +100,7 @@ export function validateSaleForm(
   }
 
   if (!isValid) {
-    setFormErrors((prev: FormErrors) => ({ ...prev, sale: errors }));
+    setFormErrors((prev) => ({ ...prev, sale: errors }));
   }
 
   return isValid;

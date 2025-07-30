@@ -38,16 +38,17 @@ export const initialFormErrors = {
   },
 };
 
+// JS doesn't allow Set<string>(), just Set()
 export const initialDeletingItems = {
-  ingredients: new Set<string>(),
-  recipes: new Set<string>(),
-  sales: new Set<string>(),
+  ingredients: new Set(),
+  recipes: new Set(),
+  sales: new Set(),
 };
 
 export const initialModal = {
   isOpen: false,
   title: "",
   message: "",
-  type: "success" as const,
+  type: "success",
   onConfirm: undefined,
 };

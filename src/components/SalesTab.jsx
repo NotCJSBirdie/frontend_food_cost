@@ -1,25 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import { FaTrash } from "react-icons/fa";
 import { usePagination } from "../hooks/usePagination";
 import Pagination from "./Pagination";
 
-interface SalesTabProps {
-  data: any;
-  saleForm: any;
-  setSaleForm: (form: any) => void;
-  formErrors: any;
-  setFormErrors: (errors: any) => void;
-  isSubmitting: any;
-  recordSaleLoading: boolean;
-  deletingItems: any;
-  deleteSaleLoading: boolean;
-  confirmRecordSale: () => void;
-  resetSaleForm: () => void;
-  confirmDeleteSale: (id: string) => void;
-}
-
-const SalesTab: React.FC<SalesTabProps> = ({
+const SalesTab = ({
   data,
   saleForm,
   setSaleForm,
@@ -85,7 +69,7 @@ const SalesTab: React.FC<SalesTabProps> = ({
             aria-invalid={!!formErrors.sale.recipeId}
           >
             <option value="">Select recipe</option>
-            {(data?.recipes ?? []).map((recipe: any) => (
+            {(data?.recipes ?? []).map((recipe) => (
               <option key={recipe.id} value={recipe.id}>
                 {recipe.name} (Cost: £{(recipe.totalCost ?? 0).toFixed(2)})
               </option>
@@ -199,7 +183,7 @@ const SalesTab: React.FC<SalesTabProps> = ({
       ) : (
         <>
           <ul className="list">
-            {paginatedData.map((sale: any) => (
+            {paginatedData.map((sale) => (
               <li key={sale.id} className="list-item">
                 <div className="list-item-content">
                   <div>
@@ -208,7 +192,9 @@ const SalesTab: React.FC<SalesTabProps> = ({
                     </p>
                     <p className="list-item-description">
                       Sale Amount: £{(sale.saleAmount ?? 0).toFixed(2)} | Date:{" "}
-                      {new Date(sale.createdAt).toLocaleDateString()}
+                      {sale.createdAt
+                        ? new Date(sale.createdAt).toLocaleDateString()
+                        : "Unknown"}
                     </p>
                   </div>
                   <button
@@ -234,7 +220,6 @@ const SalesTab: React.FC<SalesTabProps> = ({
               </li>
             ))}
           </ul>
-
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}

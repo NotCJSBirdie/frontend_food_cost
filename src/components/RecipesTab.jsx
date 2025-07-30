@@ -1,27 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import { FaTrash } from "react-icons/fa";
 import { usePagination } from "../hooks/usePagination";
 import Pagination from "./Pagination";
 
-interface RecipesTabProps {
-  data: any;
-  recipeForm: any;
-  setRecipeForm: (form: any) => void;
-  formErrors: any;
-  setFormErrors: (errors: any) => void;
-  isSubmitting: any;
-  createRecipeLoading: boolean;
-  deletingItems: any;
-  deleteRecipeLoading: boolean;
-  confirmCreateRecipe: () => void;
-  resetRecipeForm: () => void;
-  addIngredientToRecipe: () => void;
-  updateRecipeIngredient: (index: number, field: string, value: string) => void;
-  confirmDeleteRecipe: (id: string) => void;
-}
-
-const RecipesTab: React.FC<RecipesTabProps> = ({
+const RecipesTab = ({
   data,
   recipeForm,
   setRecipeForm,
@@ -139,7 +121,7 @@ const RecipesTab: React.FC<RecipesTabProps> = ({
         </div>
         <div className="form-group">
           <label>Ingredients</label>
-          {recipeForm.ingredients.map((ingredient: any, index: number) => (
+          {recipeForm.ingredients.map((ingredient, index) => (
             <div key={index} className="recipe-ingredient-row">
               <select
                 value={ingredient.id}
@@ -150,7 +132,7 @@ const RecipesTab: React.FC<RecipesTabProps> = ({
                 aria-label={`Select ingredient ${index + 1}`}
               >
                 <option value="">Select ingredient</option>
-                {(data?.ingredients ?? []).map((ing: any) => (
+                {(data?.ingredients ?? []).map((ing) => (
                   <option key={ing.id} value={ing.id}>
                     {ing.name} (£{(ing.unitPrice ?? 0).toFixed(2)}/{ing.unit})
                   </option>
@@ -172,11 +154,9 @@ const RecipesTab: React.FC<RecipesTabProps> = ({
                 type="button"
                 className="button button-danger"
                 onClick={() => {
-                  setRecipeForm((prev: any) => ({
+                  setRecipeForm((prev) => ({
                     ...prev,
-                    ingredients: prev.ingredients.filter(
-                      (_: any, i: number) => i !== index
-                    ),
+                    ingredients: prev.ingredients.filter((_, i) => i !== index),
                   }));
                 }}
                 aria-label={`Remove ingredient ${index + 1}`}
@@ -221,7 +201,6 @@ const RecipesTab: React.FC<RecipesTabProps> = ({
         </div>
       </form>
       <h3 className="section-title">Existing Recipes</h3>
-
       {totalItems === 0 ? (
         <div className="empty-state">
           <p>No recipes found. Add your first recipe above!</p>
@@ -229,7 +208,7 @@ const RecipesTab: React.FC<RecipesTabProps> = ({
       ) : (
         <>
           <ul className="list">
-            {paginatedData.map((recipe: any) => (
+            {paginatedData.map((recipe) => (
               <li key={recipe.id} className="list-item">
                 <div className="list-item-content">
                   <div>
@@ -264,7 +243,6 @@ const RecipesTab: React.FC<RecipesTabProps> = ({
               </li>
             ))}
           </ul>
-
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}

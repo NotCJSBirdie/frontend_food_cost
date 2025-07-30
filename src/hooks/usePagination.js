@@ -1,29 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useMemo } from "react";
 
-interface UsePaginationProps {
-  data: any[];
-  itemsPerPage: number;
-}
-
-interface UsePaginationReturn {
-  currentPage: number;
-  totalPages: number;
-  paginatedData: any[];
-  goToPage: (page: number) => void;
-  goToNextPage: () => void;
-  goToPreviousPage: () => void;
-  isFirstPage: boolean;
-  isLastPage: boolean;
-  startIndex: number;
-  endIndex: number;
-  totalItems: number;
-}
-
-export const usePagination = ({
-  data,
-  itemsPerPage,
-}: UsePaginationProps): UsePaginationReturn => {
+export const usePagination = ({ data, itemsPerPage }) => {
   const [currentPage, setCurrentPage] = useState(1);
 
   const totalPages = Math.ceil(data.length / itemsPerPage);
@@ -34,7 +11,7 @@ export const usePagination = ({
     return data.slice(startIndex, endIndex);
   }, [data, startIndex, endIndex]);
 
-  const goToPage = (page: number) => {
+  const goToPage = (page) => {
     const validPage = Math.max(1, Math.min(page, totalPages));
     setCurrentPage(validPage);
   };

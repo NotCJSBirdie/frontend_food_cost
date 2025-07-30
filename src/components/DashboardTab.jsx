@@ -1,11 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 
-interface DashboardTabProps {
-  data: any;
-}
-
-const DashboardTab: React.FC<DashboardTabProps> = ({ data }) => (
+const DashboardTab = ({ data }) => (
   <div className="card" role="region" aria-labelledby="dashboard-title">
     <h2 id="dashboard-title" className="card-title">
       Dashboard
@@ -13,12 +8,20 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ data }) => (
     <div className="stats-grid">
       <div className="stat">
         <p>
-          Total Sales: £{(data?.dashboardStats?.totalSales ?? 0).toFixed(2)}
+          Total Sales: £
+          {(
+            (data && data.dashboardStats && data.dashboardStats.totalSales) ??
+            0
+          ).toFixed(2)}
         </p>
       </div>
       <div className="stat">
         <p>
-          Total Costs: £{(data?.dashboardStats?.totalCosts ?? 0).toFixed(2)}
+          Total Costs: £
+          {(
+            (data && data.dashboardStats && data.dashboardStats.totalCosts) ??
+            0
+          ).toFixed(2)}
         </p>
       </div>
       <div className="stat">
@@ -26,35 +29,45 @@ const DashboardTab: React.FC<DashboardTabProps> = ({ data }) => (
           Total Margin:{" "}
           <span
             className={
-              (data?.dashboardStats?.totalMargin ?? 0) >= 0
+              ((data &&
+                data.dashboardStats &&
+                data.dashboardStats.totalMargin) ??
+                0) >= 0
                 ? "margin-positive"
                 : "margin-negative"
             }
           >
-            £{(data?.dashboardStats?.totalMargin ?? 0).toFixed(2)}
+            £
+            {(
+              (data &&
+                data.dashboardStats &&
+                data.dashboardStats.totalMargin) ??
+              0
+            ).toFixed(2)}
           </span>
         </p>
       </div>
     </div>
     <h3 className="section-title">Low Stock Alerts</h3>
     <ul className="list" aria-label="Low stock ingredients">
-      {(data?.dashboardStats?.lowStockIngredients ?? []).map(
-        (ingredient: any) => (
-          <li key={ingredient.id} className="list-item alert">
-            <div className="list-item-content">
-              <div>
-                <p className="list-item-title">
-                  {ingredient.name ?? "Unknown"}
-                </p>
-                <p className="list-item-description">
-                  {ingredient.stockQuantity ?? 0} {ingredient.unit ?? ""}{" "}
-                  (Threshold: {ingredient.restockThreshold ?? 0})
-                </p>
-              </div>
+      {(
+        (data &&
+          data.dashboardStats &&
+          data.dashboardStats.lowStockIngredients) ??
+        []
+      ).map((ingredient) => (
+        <li key={ingredient.id} className="list-item alert">
+          <div className="list-item-content">
+            <div>
+              <p className="list-item-title">{ingredient.name ?? "Unknown"}</p>
+              <p className="list-item-description">
+                {ingredient.stockQuantity ?? 0} {ingredient.unit ?? ""}{" "}
+                (Threshold: {ingredient.restockThreshold ?? 0})
+              </p>
             </div>
-          </li>
-        )
-      )}
+          </div>
+        </li>
+      ))}
     </ul>
     <div className="guide">
       <h3 className="section-title">Usage Guide</h3>

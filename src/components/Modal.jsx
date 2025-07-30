@@ -1,23 +1,7 @@
 import React, { useRef, useEffect } from "react";
 
-interface ModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  message: string;
-  type: "success" | "error" | "loading" | "confirm";
-  onConfirm?: () => void;
-}
-
-const Modal: React.FC<ModalProps> = ({
-  isOpen,
-  onClose,
-  title,
-  message,
-  type,
-  onConfirm,
-}) => {
-  const modalRef = useRef<HTMLDivElement>(null);
+const Modal = ({ isOpen, onClose, title, message, type, onConfirm }) => {
+  const modalRef = useRef(null);
 
   useEffect(() => {
     if (isOpen && modalRef.current) {

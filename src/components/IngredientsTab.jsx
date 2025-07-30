@@ -1,25 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import { FaTrash } from "react-icons/fa";
 import { usePagination } from "../hooks/usePagination";
 import Pagination from "./Pagination";
 
-interface IngredientsTabProps {
-  data: any;
-  ingredientForm: any;
-  setIngredientForm: (form: any) => void;
-  formErrors: any;
-  setFormErrors: (errors: any) => void;
-  isSubmitting: any;
-  addIngredientLoading: boolean;
-  deletingItems: any;
-  deleteIngredientLoading: boolean;
-  confirmAddIngredient: () => void;
-  resetIngredientForm: () => void;
-  confirmDeleteIngredient: (id: string) => void;
-}
-
-const IngredientsTab: React.FC<IngredientsTabProps> = ({
+const IngredientsTab = ({
   data,
   ingredientForm,
   setIngredientForm,
@@ -64,6 +48,7 @@ const IngredientsTab: React.FC<IngredientsTabProps> = ({
           confirmAddIngredient();
         }}
       >
+        {/* Ingredient Name */}
         <div className="form-group">
           <label htmlFor="ingredient-name">Ingredient Name</label>
           <input
@@ -96,6 +81,8 @@ const IngredientsTab: React.FC<IngredientsTabProps> = ({
             </p>
           )}
         </div>
+
+        {/* Unit Price */}
         <div className="form-group">
           <label htmlFor="ingredient-unit-price">Unit Price (£)</label>
           <input
@@ -135,6 +122,8 @@ const IngredientsTab: React.FC<IngredientsTabProps> = ({
             </p>
           )}
         </div>
+
+        {/* Unit */}
         <div className="form-group">
           <label htmlFor="ingredient-unit">Unit</label>
           <select
@@ -175,6 +164,8 @@ const IngredientsTab: React.FC<IngredientsTabProps> = ({
             </p>
           )}
         </div>
+
+        {/* Stock Quantity */}
         <div className="form-group">
           <label htmlFor="ingredient-stock-quantity">Stock Quantity</label>
           <input
@@ -214,6 +205,8 @@ const IngredientsTab: React.FC<IngredientsTabProps> = ({
             </p>
           )}
         </div>
+
+        {/* Restock Threshold */}
         <div className="form-group">
           <label htmlFor="ingredient-restock-threshold">
             Restock Threshold
@@ -279,58 +272,61 @@ const IngredientsTab: React.FC<IngredientsTabProps> = ({
           </button>
         </div>
       </form>
-      <h3 className="section-title">Existing Ingredients</h3>
 
+      <h3 className="section-title">Existing Ingredients</h3>
       {totalItems === 0 ? (
-        <div className="empty-state">
-          <p>No ingredients found. Add your first ingredient above!</p>
-        </div>
+        <p>No ingredients found.</p>
       ) : (
         <>
-          <ul className="list">
-            {paginatedData.map((ingredient: any) => (
-              <li key={ingredient.id} className="list-item">
-                <div className="list-item-content">
-                  <div>
-                    <p className="list-item-title">
-                      {ingredient.name ?? "Unknown"}
-                    </p>
-                    <p className="list-item-description">
-                      Price: £{(ingredient.unitPrice ?? 0).toFixed(2)} per{" "}
-                      {ingredient.unit ?? "unit"} | Stock:{" "}
-                      {ingredient.stockQuantity ?? 0} | Threshold:{" "}
-                      {ingredient.restockThreshold ?? 0}
-                    </p>
-                  </div>
-                  <button
-                    className="button button-danger"
-                    onClick={() => confirmDeleteIngredient(ingredient.id)}
-                    disabled={
-                      deletingItems.ingredients.has(ingredient.id) ||
-                      deleteIngredientLoading
-                    }
-                    aria-label={`Delete ${ingredient.name}`}
-                  >
-                    {deletingItems.ingredients.has(ingredient.id) ? (
-                      <div
-                        className="loading-spinner small"
-                        aria-label="Deleting"
-                      ></div>
-                    ) : (
-                      <FaTrash />
-                    )}
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-
+          <div className="table-wrapper">
+            <table className="table" aria-label="Ingredients table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Unit</th>
+                  <th>Unit Price (£)</th>
+                  <th>Stock Quantity</th>
+                  <th>Restock Threshold</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedData.map((ingredient) => (
+                  <tr key={ingredient.id}>
+                    <td>{ingredient.name}</td>
+                    <td>{ingredient.unit}</td>
+                    <td>{Number(ingredient.unitPrice).toFixed(2)}</td>
+                    <td>{ingredient.stockQuantity}</td>
+                    <td>{ingredient.restockThreshold}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="icon-button"
+                        aria-label={`Delete ingredient ${ingredient.name}`}
+                        onClick={() => confirmDeleteIngredient(ingredient.id)}
+                        disabled={
+                          deletingItems.ingredients.has(ingredient.id) ||
+                          deleteIngredientLoading
+                        }
+                      >
+                        {deletingItems.ingredients.has(ingredient.id) ? (
+                          "Deleting..."
+                        ) : (
+                          <FaTrash />
+                        )}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            onPageChange={goToPage}
-            onPreviousPage={goToPreviousPage}
-            onNextPage={goToNextPage}
+            goToPage={goToPage}
+            goToNextPage={goToNextPage}
+            goToPreviousPage={goToPreviousPage}
             isFirstPage={isFirstPage}
             isLastPage={isLastPage}
             startIndex={startIndex}

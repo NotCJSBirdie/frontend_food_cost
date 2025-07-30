@@ -1,21 +1,7 @@
 import React from "react";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
-interface PaginationProps {
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-  onPreviousPage: () => void;
-  onNextPage: () => void;
-  isFirstPage: boolean;
-  isLastPage: boolean;
-  startIndex: number;
-  endIndex: number;
-  totalItems: number;
-  className?: string;
-}
-
-const Pagination: React.FC<PaginationProps> = ({
+const Pagination = ({
   currentPage,
   totalPages,
   onPageChange,
@@ -34,36 +20,29 @@ const Pagination: React.FC<PaginationProps> = ({
     const maxVisiblePages = 5;
 
     if (totalPages <= maxVisiblePages) {
-      // Show all pages if total pages is small
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
       }
     } else {
-      // Show first page
       pages.push(1);
 
-      // Calculate range around current page
       const startPage = Math.max(2, currentPage - 1);
       const endPage = Math.min(totalPages - 1, currentPage + 1);
 
-      // Add ellipsis if needed
       if (startPage > 2) {
         pages.push("...");
       }
 
-      // Add pages around current page
       for (let i = startPage; i <= endPage; i++) {
         if (i !== 1 && i !== totalPages) {
           pages.push(i);
         }
       }
 
-      // Add ellipsis if needed
       if (endPage < totalPages - 1) {
         pages.push("...");
       }
 
-      // Show last page
       if (totalPages > 1) {
         pages.push(totalPages);
       }
@@ -85,7 +64,6 @@ const Pagination: React.FC<PaginationProps> = ({
           Showing {startIndex + 1} to {endIndex} of {totalItems} entries
         </span>
       </div>
-
       <div className="pagination-controls">
         <button
           onClick={onPreviousPage}
@@ -96,7 +74,6 @@ const Pagination: React.FC<PaginationProps> = ({
           <FaChevronLeft />
           <span>Previous</span>
         </button>
-
         <div className="pagination-numbers">
           {pageNumbers.map((page, index) => (
             <React.Fragment key={index}>
@@ -104,7 +81,7 @@ const Pagination: React.FC<PaginationProps> = ({
                 <span className="pagination-ellipsis">...</span>
               ) : (
                 <button
-                  onClick={() => onPageChange(page as number)}
+                  onClick={() => onPageChange(page)}
                   className={`pagination-button pagination-button-number ${
                     currentPage === page ? "active" : ""
                   }`}
@@ -117,7 +94,6 @@ const Pagination: React.FC<PaginationProps> = ({
             </React.Fragment>
           ))}
         </div>
-
         <button
           onClick={onNextPage}
           disabled={isLastPage}
