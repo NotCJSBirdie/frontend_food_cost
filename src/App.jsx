@@ -378,7 +378,7 @@ function App() {
   const renderTabContent = () => {
     switch (activeTab) {
       case "dashboard":
-        return <DashboardTab data={{ dashboard }} />;
+        return <DashboardTab data={dashboard} />;
       case "ingredients":
         return (
           <IngredientsTab
